@@ -63,6 +63,7 @@ class BrawlMapListView(ManualListView):
 
 
 
-	async def action_ban(self):
-		None
-		# TODO - implement
+	async def action_ban(self, player, values, map_info, **kwargs):
+		await self.app.remove_map_from_match(map_info)
+		await self.app.next_ban()
+		await self.destroy()

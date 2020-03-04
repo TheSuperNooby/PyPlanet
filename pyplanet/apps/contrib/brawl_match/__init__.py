@@ -1,6 +1,7 @@
 from pyplanet.apps.config import AppConfig
 from pyplanet.contrib.command import Command
 from pyplanet.apps.contrib.brawl_match.views import BrawlMapListView
+import asyncio
 
 
 class BrawlMatch(AppConfig):
@@ -19,6 +20,7 @@ class BrawlMatch(AppConfig):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.ban_queue = asyncio.Queue()
 
 
 	async def on_init(self):
@@ -28,8 +30,6 @@ class BrawlMatch(AppConfig):
 
 	async def on_start(self):
 		print("BrawlMatch is starting")
-
-
 
 		# Registering permissions
 		await self.instance.permission_manager.register(
@@ -44,13 +44,14 @@ class BrawlMatch(AppConfig):
 			Command(
 				'match',
 				target=self.command_match,
+				perms='brawl_match:match_start',
 				admin=True
 			)
 		)
 
 	async def command_match(self, player, *args, **kwargs):
 		await self.set_match_settings()
-		await self.choose_maps()
+		await self.ban_maps()
 
 
 	async def set_match_settings(self):
@@ -69,17 +70,28 @@ class BrawlMatch(AppConfig):
 		settings['S_WarmUpNb'] = 1
 		await self.instance.mode_manager.update_settings(settings)
 
-	async def update_finish_timeout_and_wu_duration(self, timeout, duration):
+	async def ban_maps(self):
+		event_loop = asyncio.get_running_loop()
+		event_loop.call_soon_threadsafe(self.ban_queue.put_nowait, 'astronautj')
+		event_loop.call_soon_threadsafe(self.ban_queue.put_nowait, 'mitry')
+		await self.next_ban()
+
+
+	async def next_ban(self):
+		if len(self.match_maps) > 5:
+			await self.ban_map(await self.ban_queue.get())
+
+
+	async def ban_map(self, player):
+		maps = [map[0] for map in self.match_maps]
+		ban_view = BrawlMapListView(self, maps)
+		await ban_view.display(player=player)
+
+
+	async def remove_map_from_match(self, map_info):
+		self.match_maps.pop(map_info['index']-1)
+
+	async def update_finish_timeout(self, timeout):
 		settings = await self.instance.mode_manager.get_settings()
 		settings['S_FinishTimeout'] = timeout
-		settings['S_WarmUpDuration'] = duration
 		await self.instance.mode_manager.update_next_settings(settings)
-
-	async def choose_maps(self):
-		maps = [map[0] for map in self.brawl_maps]
-		view = BrawlMapListView(self, maps)
-		await view.display(player='astronautj')
-
-	async def ban_map(self, map):
-		del self.match_maps[map]
-
