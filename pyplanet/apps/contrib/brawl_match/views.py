@@ -1,5 +1,5 @@
 from pyplanet.views.generics.list import ManualListView
-from pyplanet.apps.core.maniaplanet.models import Map
+from pyplanet.apps.core.maniaplanet.models import Map, Player
 
 class BrawlMapListView(ManualListView):
 	model = Map
@@ -67,3 +67,60 @@ class BrawlMapListView(ManualListView):
 		await self.app.remove_map_from_match(map_info)
 		await self.app.next_ban()
 		await self.destroy()
+
+class BrawlPlayerListView(ManualListView):
+	model = Player
+	title = 'Players in the match'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'Buddies'
+	# List of players available to add to brawl match
+	player_list = []
+
+	def __init__(self, app):
+		super().__init__(self)
+		self.app = app
+		self.manager = app.context.ui
+
+	async def get_fields(self):
+		return [
+			{
+				'name': '#',
+				'index': 'index',
+				'sorting': True,
+				'searching': False,
+				'width': 10,
+				'type': 'label'
+			},
+			{
+				'name': 'Nickname',
+				'index': 'nickname',
+				'sorting': True,
+				'searching': True,
+				'width': 100,
+				'type': 'label',
+				'action': self.action_add
+			},
+			{
+				'name': 'Login',
+				'index': 'login',
+				'sorting': True,
+				'searching': True,
+				'width': 50,
+				'type': 'label',
+				'action': self.action_add
+			}
+		]
+
+	async def get_data(self):
+		return [{'index': index, 'nickname': player.nickname, 'login': player.login}
+				for index, player in enumerate(self.app.instance.player_manager.online, start=1)]
+
+	async def action_add(self, player, values, player_info, **kwargs):
+		if len(self.app.match_players) < 3:
+			await self.app.add_player_to_match(player_info)
+		elif len(self.app.match_players) < 4:
+			await self.app.add_player_to_match(player_info)
+			await self.app.start_ban_phase()
+			await self.destroy()
+		else:
+			await self.destroy()

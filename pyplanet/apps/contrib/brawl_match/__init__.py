@@ -1,6 +1,6 @@
 from pyplanet.apps.config import AppConfig
 from pyplanet.contrib.command import Command
-from pyplanet.apps.contrib.brawl_match.views import BrawlMapListView
+from pyplanet.apps.contrib.brawl_match.views import *
 import asyncio
 
 
@@ -17,6 +17,7 @@ class BrawlMatch(AppConfig):
 		('GuIyeKb7lF6fsebOZ589d47Pqnk', 64000)  # Only a wooden leg remained
 	]
 	match_maps = brawl_maps
+	match_players = []
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -51,8 +52,7 @@ class BrawlMatch(AppConfig):
 
 	async def command_match(self, player, *args, **kwargs):
 		await self.set_match_settings()
-		await self.ban_maps()
-
+		await self.choose_players(player=player)
 
 	async def set_match_settings(self):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
@@ -70,15 +70,22 @@ class BrawlMatch(AppConfig):
 		settings['S_WarmUpNb'] = 1
 		await self.instance.mode_manager.update_settings(settings)
 
-	async def ban_maps(self):
+	async def choose_players(self, player):
+		player_view = BrawlPlayerListView(self)
+		await player_view.display(player=player)
+
+	async def add_player_to_match(self, player_info):
+		self.match_players.append(player_info['login'])
+
+	async def start_ban_phase(self):
 		event_loop = asyncio.get_running_loop()
-		event_loop.call_soon_threadsafe(self.ban_queue.put_nowait, 'astronautj')
-		event_loop.call_soon_threadsafe(self.ban_queue.put_nowait, 'mitry')
+		for player in self.match_players:
+			event_loop.call_soon_threadsafe(self.ban_queue.put_nowait, player)
 		await self.next_ban()
 
 
 	async def next_ban(self):
-		if len(self.match_maps) > 5:
+		if len(self.match_maps) > 3:
 			await self.ban_map(await self.ban_queue.get())
 
 
@@ -90,6 +97,7 @@ class BrawlMatch(AppConfig):
 
 	async def remove_map_from_match(self, map_info):
 		self.match_maps.pop(map_info['index']-1)
+
 
 	async def update_finish_timeout(self, timeout):
 		settings = await self.instance.mode_manager.get_settings()
