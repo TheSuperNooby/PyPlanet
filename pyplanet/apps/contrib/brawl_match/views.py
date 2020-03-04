@@ -65,6 +65,9 @@ class BrawlMapListView(ManualListView):
 
 	async def action_ban(self, player, values, map_info, **kwargs):
 		await self.app.remove_map_from_match(map_info)
+		await self.app.instance.chat(f'{self.app.chat_prefix}Player '
+								 f'{player.nickname}$z$fff has just banned '
+								 f'{map_info["name"]}')
 		await self.app.next_ban()
 		await self.destroy()
 
@@ -117,9 +120,9 @@ class BrawlPlayerListView(ManualListView):
 
 	async def action_add(self, player, values, player_info, **kwargs):
 		if len(self.app.match_players) < 3:
-			await self.app.add_player_to_match(player_info)
+			await self.app.add_player_to_match(player, player_info)
 		elif len(self.app.match_players) < 4:
-			await self.app.add_player_to_match(player_info)
+			await self.app.add_player_to_match(player, player_info)
 			await self.app.start_ban_phase()
 			await self.destroy()
 		else:
