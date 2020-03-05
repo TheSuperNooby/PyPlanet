@@ -1,5 +1,6 @@
-from pyplanet.views.generics.list import ManualListView
 from pyplanet.apps.core.maniaplanet.models import Map, Player
+from pyplanet.views.generics.list import ManualListView
+
 
 class BrawlMapListView(ManualListView):
 	model = Map
@@ -66,8 +67,8 @@ class BrawlMapListView(ManualListView):
 	async def action_ban(self, player, values, map_info, **kwargs):
 		await self.app.remove_map_from_match(map_info)
 		await self.app.instance.chat(f'{self.app.chat_prefix}Player '
-								 f'{player.nickname}$z$fff has just banned '
-								 f'{map_info["name"]}')
+								f'{player.nickname}$z$fff has just banned '
+								f'{map_info["name"]}')
 		await self.app.next_ban()
 		await self.destroy()
 
@@ -115,8 +116,17 @@ class BrawlPlayerListView(ManualListView):
 		]
 
 	async def get_data(self):
-		return [{'index': index, 'nickname': player.nickname, 'login': player.login}
-				for index, player in enumerate(self.app.instance.player_manager.online, start=1)]
+		return [
+			{
+				'index': index,
+				'nickname': player.nickname,
+				'login': player.login
+			}
+				for index, player in enumerate(
+					self.app.instance.player_manager.online, start=1
+				)
+
+			]
 
 	async def action_add(self, player, values, player_info, **kwargs):
 		if len(self.app.match_players) < 3:
