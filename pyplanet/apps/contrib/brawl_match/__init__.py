@@ -12,25 +12,30 @@ from pyplanet.contrib.command import Command
 class BrawlMatch(AppConfig):
 	game_dependencies = ['trackmania']
 	app_dependencies = ['core.maniaplanet', 'core.trackmania']
-	brawl_maps = [
-		('26yU1ouud7IqURhbmlEzX3jxJM1', 49), # On the Run
-		('I5y9YjoVaw9updRFOecqmN0V6sh', 73), # Moon Base
-		('WUrcV1ziafkmDOEUQJslceNghs2', 72), # Nos Astra
-		('DPl6mjmUhXhlXqhpva_INcwvx5e', 55), # Maru
-		('3Pg4di6kaDyM04oHYm5AkC3r2ch', 46), # Aliens Exist
-		('ML4VsiZKZSiWNkwpEdSA11SH7mg', 51), # L v g v s
-		('GuIyeKb7lF6fsebOZ589d47Pqnk', 64)  # Only a wooden leg remained
-	]
-	match_maps = brawl_maps
-	match_players = []
-	chat_prefix = '$i$000.$903Brawl$fff - $z$fff'
+
 	TIME_UNTIL_BAN_PHASE = 30
 	TIME_UNTIL_MATCH_PHASE = 60
 	TIME_UNTIL_NEXT_WALL = 3
 
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.ban_queue = asyncio.Queue()
+
+		self.brawl_maps = [
+			('26yU1ouud7IqURhbmlEzX3jxJM1', 49),  # On the Run
+			('I5y9YjoVaw9updRFOecqmN0V6sh', 73),  # Moon Base
+			('WUrcV1ziafkmDOEUQJslceNghs2', 72),  # Nos Astra
+			('DPl6mjmUhXhlXqhpva_INcwvx5e', 55),  # Maru
+			('3Pg4di6kaDyM04oHYm5AkC3r2ch', 46),  # Aliens Exist
+			('ML4VsiZKZSiWNkwpEdSA11SH7mg', 51),  # L v g v s
+			('GuIyeKb7lF6fsebOZ589d47Pqnk', 64)   # Only a wooden leg remained
+		]
+		self.match_maps = self.brawl_maps.copy()
+		self.match_players = []
+		self.chat_prefix = '$i$000.$903Brawl$fff - $z$fff'
+
+		self.match_tasks = []
 
 	async def on_init(self):
 		await super().on_init()
@@ -70,7 +75,7 @@ class BrawlMatch(AppConfig):
 	async def start_match(self, player):
 		await self.set_match_settings()
 
-		message = f' You started a brawl match. Pick the participants from worst to best seed'
+		message = f'You started a brawl match. Pick the participants from worst to best seed.'
 		await self.brawl_chat(message, player)
 
 		await self.choose_players(player=player)
