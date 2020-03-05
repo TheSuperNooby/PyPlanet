@@ -49,12 +49,12 @@ class BrawlMatch(AppConfig):
 			Command(
 				'start',
 				namespace='match',
-				target=self.start_match,
+				target=self.start_match_command,
 				perms='brawl_match:match_control',
 				admin=True
 			),
 			Command(
-				'end',
+				'stop',
 				namespace='match',
 				target=self.stop_match,
 				perms='brawl_match:match_control',
@@ -63,7 +63,11 @@ class BrawlMatch(AppConfig):
 
 		)
 
-	async def start_match(self, player, *args, **kwargs):
+	async def start_match_command(self, player, *args, **kwargs):
+		await self.register_match_task(self.start_match, player)
+
+
+	async def start_match(self, player):
 		await self.set_match_settings()
 
 		message = f' You started a brawl match. Pick the participants from worst to best seed'
@@ -172,10 +176,18 @@ class BrawlMatch(AppConfig):
 
 
 	async def stop_match(self, player, *args, **kwargs):
+		if not self.match_tasks:
+			await self.brawl_chat(f'No match is currently in progress!', player)
+			return
+		for task in self.match_tasks:
+			if not task.done():
+				task.cancel()
+		self.match_tasks = []
+		await self.brawl_chat(f'Admin {player.nickname}$z$fff stopped match!')
 		for signal, target in self.context.signals.listeners:
 			if target == self.set_settings_next_map:
 				signal.unregister(target)
-		self.match_maps = self.brawl_maps
+		self.match_maps = self.brawl_maps.copy()
 		self.match_players = []
 
 	async def update_finish_timeout(self, timeout):
@@ -202,3 +214,10 @@ class BrawlMatch(AppConfig):
 			await self.instance.chat(f'{self.chat_prefix}{message}', player)
 		else:
 			await self.instance.chat(f'{self.chat_prefix}{message}')
+
+	async def register_match_task(self, func, *args):
+		if args:
+			self.match_tasks.append(asyncio.create_task(func(*args)))
+		else:
+			self.match_tasks.append(asyncio.create_task(func()))
+
