@@ -113,7 +113,8 @@ class BrawlMatch(AppConfig):
 		if len(self.match_maps) > 3:
 			player_to_ban = await self.ban_queue.get()
 			player_nick = (await Player.get_by_login(player_to_ban)).nickname
-			await self.instance.chat(f'{self.chat_prefix}Player {player_nick}$z$fff is now banning.')
+			message = f'{self.chat_prefix}[{self.match_players.index(player_to_ban)+1}/{len(self.match_players)}] {player_nick}$z$fff is now banning.'
+			await self.instance.chat(message)
 			await self.ban_map(player_to_ban)
 
 		else:
