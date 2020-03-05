@@ -1,6 +1,5 @@
 import asyncio
 import random
-import time
 
 from pyplanet.apps.config import AppConfig
 from pyplanet.apps.contrib.brawl_match.views import (BrawlMapListView,
@@ -107,7 +106,7 @@ class BrawlMatch(AppConfig):
 		nicks_string = '$z$fff vs '.join(nicks)
 		await self.brawl_chat(f'New match has been created: {nicks_string}$z$fff.')
 
-		time.sleep(self.TIME_UNTIL_NEXT_WALL)
+		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 		await self.brawl_chat(f'Banning order:')
 		for index, nick in enumerate(nicks, start=1):
 			await self.brawl_chat(f'[{index}/{len(nicks)}] {nick}')
@@ -117,13 +116,13 @@ class BrawlMatch(AppConfig):
 		await self.next_ban()
 
 	async def await_ban_phase(self):
-		time.sleep(5)
+		await asyncio.sleep(5)
 		await self.brawl_chat(f'Banning will start in {self.TIME_UNTIL_BAN_PHASE} seconds!')
-		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
 		await self.brawl_chat(f'Banning will start in {int(self.TIME_UNTIL_BAN_PHASE/2)} seconds!')
-		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
 		await self.brawl_chat(f'Banning will start now!')
-		time.sleep(self.TIME_UNTIL_NEXT_WALL)
+		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 
 	async def next_ban(self):
 		if len(self.match_maps) > 3:
@@ -161,15 +160,15 @@ class BrawlMatch(AppConfig):
 		await self.instance.gbx('NextMap')
 
 	async def await_match_start(self):
-		time.sleep(5)
+		await asyncio.sleep(5)
 		await self.brawl_chat(f'Match will start in {self.TIME_UNTIL_MATCH_PHASE} seconds!')
-		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
 		await self.brawl_chat(f'Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/2)} seconds!')
-		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
+		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
 		await self.brawl_chat(f'Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/4)} seconds!')
-		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
+		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
 		await self.brawl_chat(f'Match will start now!')
-		time.sleep(self.TIME_UNTIL_NEXT_WALL)
+		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 
 
 	async def stop_match(self, player, *args, **kwargs):
@@ -200,7 +199,6 @@ class BrawlMatch(AppConfig):
 
 	async def brawl_chat(self, message, player=None):
 		if player:
-			await self.instance.chat(f'{self.chat_prefix}' + message, player)
+			await self.instance.chat(f'{self.chat_prefix}{message}', player)
 		else:
-			await self.instance.chat(f'{self.chat_prefix}' + message)
-
+			await self.instance.chat(f'{self.chat_prefix}{message}')
