@@ -1,5 +1,6 @@
 import asyncio
 import random
+import time
 
 from pyplanet.apps.config import AppConfig
 from pyplanet.apps.contrib.brawl_match.views import (BrawlMapListView,
@@ -24,6 +25,9 @@ class BrawlMatch(AppConfig):
 	match_maps = brawl_maps
 	match_players = []
 	chat_prefix = '$i$000.$903Brawl$fff - $z$fff'
+	TIME_UNTIL_BAN_PHASE = 30
+	TIME_UNTIL_MATCH_PHASE = 60
+	TIME_UNTIL_NEXT_WALL = 3
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -103,11 +107,23 @@ class BrawlMatch(AppConfig):
 		nicks_string = '$z$fff vs '.join(nicks)
 		await self.instance.chat(f'{self.chat_prefix}New match has been created: {nicks_string}$z$fff.')
 
+		time.sleep(self.TIME_UNTIL_NEXT_WALL)
 		await self.instance.chat(f'{self.chat_prefix}Banning order:')
 		for index, nick in enumerate(nicks, start=1):
 			await self.instance.chat(f'{self.chat_prefix}[{index}/{len(nicks)}] {nick}')
 
+		await self.await_ban_phase()
+
 		await self.next_ban()
+
+	async def await_ban_phase(self):
+		time.sleep(5)
+		await self.instance.chat(f'{self.chat_prefix}Banning will start in {self.TIME_UNTIL_BAN_PHASE} seconds!')
+		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await self.instance.chat(f'{self.chat_prefix}Banning will start in {int(self.TIME_UNTIL_BAN_PHASE/2)} seconds!')
+		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await self.instance.chat(f'{self.chat_prefix}Banning will start now!')
+		time.sleep(self.TIME_UNTIL_NEXT_WALL)
 
 	async def next_ban(self):
 		if len(self.match_maps) > 3:
@@ -116,8 +132,10 @@ class BrawlMatch(AppConfig):
 			message = f'{self.chat_prefix}[{self.match_players.index(player_to_ban)+1}/{len(self.match_players)}] {player_nick}$z$fff is now banning.'
 			await self.instance.chat(message)
 			await self.ban_map(player_to_ban)
-
 		else:
+			maps_string = '$z$fff  -  '.join([(await Map.get_by_uid(map[0])).name for map in self.match_maps])
+			await self.instance.chat(f'{self.chat_prefix}Banning phase over! Maps for this match are:')
+			await self.instance.chat(f'{self.chat_prefix}{maps_string}')
 			await self.init_match()
 
 	async def ban_map(self, player):
@@ -129,6 +147,7 @@ class BrawlMatch(AppConfig):
 		self.match_maps.pop(map_info['index']-1)
 
 	async def init_match(self):
+		await self.await_match_start()
 		self.context.signals.listen(mp_signals.map.map_begin, self.set_settings_next_map)
 
 		random.shuffle(self.match_maps)
@@ -140,6 +159,18 @@ class BrawlMatch(AppConfig):
 
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
 		await self.instance.gbx('NextMap')
+
+	async def await_match_start(self):
+		time.sleep(5)
+		await self.instance.chat(f'{self.chat_prefix}Match will start in {self.TIME_UNTIL_MATCH_PHASE} seconds!')
+		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
+		await self.instance.chat(f'{self.chat_prefix}Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/2)} seconds!')
+		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
+		await self.instance.chat(f'{self.chat_prefix}Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/4)} seconds!')
+		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
+		await self.instance.chat(f'{self.chat_prefix}Match will start now!')
+		time.sleep(self.TIME_UNTIL_NEXT_WALL)
+
 
 	async def stop_match(self, player, *args, **kwargs):
 		for signal, target in self.context.signals.listeners:
