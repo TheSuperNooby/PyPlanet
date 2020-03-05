@@ -199,7 +199,6 @@ class BrawlMatch(AppConfig):
 
 	async def brawl_chat(self, message, player=None):
 		if player:
-			await self.instance.chat(f'{self.chat_prefix}' + message, player)
+			await self.instance.chat(f'{self.chat_prefix}{message}', player)
 		else:
 			await self.instance.chat(f'{self.chat_prefix}' + message)
-
