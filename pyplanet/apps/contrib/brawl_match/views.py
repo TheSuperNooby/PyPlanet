@@ -71,7 +71,7 @@ class BrawlMapListView(ManualListView):
 		await self.app.instance.chat(f'{self.app.chat_prefix}Player '
 								f'{player.nickname}$z$fff has just banned '
 								f'{map_info["name"]}')
-		# Maybe not an idea solution, but works for now
+		# Maybe not an ideal solution, but works for now
 		await self.hide([player.login])
 		await self.app.register_match_task(self.app.next_ban)
 		await self.destroy()
@@ -137,7 +137,7 @@ class BrawlPlayerListView(ManualListView):
 			await self.app.register_match_task(self.app.add_player_to_match, player, player_info)
 		elif len(self.app.match_players) < 4:
 			await self.app.register_match_task(self.app.add_player_to_match, player, player_info)
-			# Maybe not an idea solution, but works for now
+			# Maybe not an ideal solution, but works for now
 			await self.hide([player.login])
 			await self.app.register_match_task(self.app.start_ban_phase)
 			await self.destroy()

@@ -125,7 +125,7 @@ class BrawlMatch(AppConfig):
 		await self.next_ban()
 
 	async def await_ban_phase(self):
-		await asyncio.sleep(5)
+		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 		await self.brawl_chat(f'Banning will start in {self.TIME_UNTIL_BAN_PHASE} seconds!')
 		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
 		await self.brawl_chat(f'Banning will start in {int(self.TIME_UNTIL_BAN_PHASE/2)} seconds!')
@@ -169,7 +169,7 @@ class BrawlMatch(AppConfig):
 		await self.instance.gbx('NextMap')
 
 	async def await_match_start(self):
-		await asyncio.sleep(5)
+		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 		await self.brawl_chat(f'Match will start in {self.TIME_UNTIL_MATCH_PHASE} seconds!')
 		await asyncio.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
 		await self.brawl_chat(f'Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/2)} seconds!')
