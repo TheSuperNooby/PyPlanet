@@ -67,8 +67,8 @@ class BrawlMatch(AppConfig):
 	async def start_match(self, player, *args, **kwargs):
 		await self.set_match_settings()
 
-		message = f'{self.chat_prefix} You started a brawl match. Pick the participants from worst to best seed'
-		await self.instance.chat(message, player)
+		message = f' You started a brawl match. Pick the participants from worst to best seed'
+		await self.brawl_chat(message, player)
 
 		await self.choose_players(player=player)
 
@@ -95,8 +95,8 @@ class BrawlMatch(AppConfig):
 
 	async def add_player_to_match(self, admin, player_info):
 		self.match_players.append(player_info['login'])
-		message = f'{self.chat_prefix}Player {player_info["nickname"]}$z$fff is added to the match.'
-		await self.instance.chat(message, admin)
+		message = f'Player {player_info["nickname"]}$z$fff is added to the match.'
+		await self.brawl_chat(message, admin)
 
 	async def start_ban_phase(self):
 		event_loop = asyncio.get_running_loop()
@@ -105,12 +105,12 @@ class BrawlMatch(AppConfig):
 
 		nicks = [(await Player.get_by_login(player)).nickname for player in self.match_players]
 		nicks_string = '$z$fff vs '.join(nicks)
-		await self.instance.chat(f'{self.chat_prefix}New match has been created: {nicks_string}$z$fff.')
+		await self.brawl_chat(f'New match has been created: {nicks_string}$z$fff.')
 
 		time.sleep(self.TIME_UNTIL_NEXT_WALL)
-		await self.instance.chat(f'{self.chat_prefix}Banning order:')
+		await self.brawl_chat(f'Banning order:')
 		for index, nick in enumerate(nicks, start=1):
-			await self.instance.chat(f'{self.chat_prefix}[{index}/{len(nicks)}] {nick}')
+			await self.brawl_chat(f'[{index}/{len(nicks)}] {nick}')
 
 		await self.await_ban_phase()
 
@@ -118,24 +118,24 @@ class BrawlMatch(AppConfig):
 
 	async def await_ban_phase(self):
 		time.sleep(5)
-		await self.instance.chat(f'{self.chat_prefix}Banning will start in {self.TIME_UNTIL_BAN_PHASE} seconds!')
+		await self.brawl_chat(f'Banning will start in {self.TIME_UNTIL_BAN_PHASE} seconds!')
 		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
-		await self.instance.chat(f'{self.chat_prefix}Banning will start in {int(self.TIME_UNTIL_BAN_PHASE/2)} seconds!')
+		await self.brawl_chat(f'Banning will start in {int(self.TIME_UNTIL_BAN_PHASE/2)} seconds!')
 		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
-		await self.instance.chat(f'{self.chat_prefix}Banning will start now!')
+		await self.brawl_chat(f'Banning will start now!')
 		time.sleep(self.TIME_UNTIL_NEXT_WALL)
 
 	async def next_ban(self):
 		if len(self.match_maps) > 3:
 			player_to_ban = await self.ban_queue.get()
 			player_nick = (await Player.get_by_login(player_to_ban)).nickname
-			message = f'{self.chat_prefix}[{self.match_players.index(player_to_ban)+1}/{len(self.match_players)}] {player_nick}$z$fff is now banning.'
-			await self.instance.chat(message)
+			message = f'[{self.match_players.index(player_to_ban)+1}/{len(self.match_players)}] {player_nick}$z$fff is now banning.'
+			await self.brawl_chat(message)
 			await self.ban_map(player_to_ban)
 		else:
 			maps_string = '$z$fff  -  '.join([(await Map.get_by_uid(map[0])).name for map in self.match_maps])
-			await self.instance.chat(f'{self.chat_prefix}Banning phase over! Maps for this match are:')
-			await self.instance.chat(f'{self.chat_prefix}{maps_string}')
+			await self.brawl_chat(f'Banning phase over! Maps for this match are:')
+			await self.brawl_chat(f'{maps_string}')
 			await self.init_match()
 
 	async def ban_map(self, player):
@@ -152,23 +152,23 @@ class BrawlMatch(AppConfig):
 
 		random.shuffle(self.match_maps)
 
-		await self.instance.chat(f'{self.chat_prefix}Map order: ')
+		await self.brawl_chat(f'Map order: ')
 		for index, (uid, _) in enumerate(self.match_maps, start=1):
 			map_name = (await Map.get_by_uid(uid)).name
-			await self.instance.chat(f'{self.chat_prefix}[{index}/{len(self.match_maps)}] {map_name}')
+			await self.brawl_chat(f'[{index}/{len(self.match_maps)}] {map_name}')
 
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
 		await self.instance.gbx('NextMap')
 
 	async def await_match_start(self):
 		time.sleep(5)
-		await self.instance.chat(f'{self.chat_prefix}Match will start in {self.TIME_UNTIL_MATCH_PHASE} seconds!')
+		await self.brawl_chat(f'Match will start in {self.TIME_UNTIL_MATCH_PHASE} seconds!')
 		time.sleep(self.TIME_UNTIL_BAN_PHASE / 2)
-		await self.instance.chat(f'{self.chat_prefix}Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/2)} seconds!')
+		await self.brawl_chat(f'Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/2)} seconds!')
 		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
-		await self.instance.chat(f'{self.chat_prefix}Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/4)} seconds!')
+		await self.brawl_chat(f'Match will start in {int(self.TIME_UNTIL_MATCH_PHASE/4)} seconds!')
 		time.sleep(self.TIME_UNTIL_BAN_PHASE / 4)
-		await self.instance.chat(f'{self.chat_prefix}Match will start now!')
+		await self.brawl_chat(f'Match will start now!')
 		time.sleep(self.TIME_UNTIL_NEXT_WALL)
 
 
@@ -197,3 +197,10 @@ class BrawlMatch(AppConfig):
 						self.match_maps[(index + 1) % len(self.match_maps)][0]
 					)
 				)
+
+	async def brawl_chat(self, message, player=None):
+		if player:
+			await self.instance.chat(f'{self.chat_prefix}' + message, player)
+		else:
+			await self.instance.chat(f'{self.chat_prefix}' + message)
+
