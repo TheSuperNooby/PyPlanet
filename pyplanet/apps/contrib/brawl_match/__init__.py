@@ -23,7 +23,7 @@ class BrawlMatch(AppConfig):
 	]
 	match_maps = brawl_maps
 	match_players = []
-	chat_prefix = '$f33Brawl$fff - '
+	chat_prefix = '$i$000.$903Brawl$fff - $z$fff'
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
