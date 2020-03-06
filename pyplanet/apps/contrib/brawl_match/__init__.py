@@ -91,12 +91,11 @@ class BrawlMatch(AppConfig):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
 
-		self.context.signals.listen(mp_signals.map.map_begin, self.set_settings)
+		asyncio.ensure_future(self.instance.gbx('NextMap'))
+		await self.set_settings()
 
-		await self.instance.gbx('RestartMap')
-		await self.instance.gbx('NextMap')
 
-	async def set_settings(self, map):
+	async def set_settings(self):
 		settings = await self.instance.mode_manager.get_settings()
 
 		settings['S_AllowRespawn'] = True
@@ -108,7 +107,7 @@ class BrawlMatch(AppConfig):
 		settings['S_RoundsPerMap'] = 3
 		settings['S_WarmUpNb'] = 1
 
-		await self.instance.mode_manager.update_settings(settings)
+		await self.instance.mode_manager.update_next_settings(settings)
 
 	async def choose_players(self, player):
 		player_view = BrawlPlayerListView(self)
@@ -191,7 +190,6 @@ class BrawlMatch(AppConfig):
 		await self.brawl_chat(f'Match will start now!')
 		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
 
-
 	async def stop_match(self, player, *args, **kwargs):
 		if not self.match_tasks:
 			await self.brawl_chat(f'No match is currently in progress!', player)
@@ -215,7 +213,6 @@ class BrawlMatch(AppConfig):
 		await self.instance.mode_manager.set_next_script(self.backup_script_name)
 		await self.instance.gbx('RestartMap')
 		await self.instance.mode_manager.update_next_settings(self.backup_settings)
-
 
 	async def update_finish_timeout(self, timeout):
 		settings = await self.instance.mode_manager.get_settings()
