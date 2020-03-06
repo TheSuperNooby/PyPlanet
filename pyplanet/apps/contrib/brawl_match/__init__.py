@@ -81,8 +81,14 @@ class BrawlMatch(AppConfig):
 	async def set_match_settings(self):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
+
+		self.context.signals.listen(mp_signals.map.map_begin, self.set_settings)
+
+		await self.instance.gbx('RestartMap')
 		await self.instance.gbx('NextMap')
 
+
+	async def set_settings(self, map):
 		settings = await self.instance.mode_manager.get_settings()
 
 		settings['S_AllowRespawn'] = True
@@ -188,7 +194,7 @@ class BrawlMatch(AppConfig):
 		self.match_tasks = []
 		await self.brawl_chat(f'Admin {player.nickname}$z$fff stopped match!')
 		for signal, target in self.context.signals.listeners:
-			if target == self.set_settings_next_map:
+			if target == self.set_settings_next_map or target == self.set_settings:
 				signal.unregister(target)
 		self.match_maps = self.brawl_maps.copy()
 		self.match_players = []
