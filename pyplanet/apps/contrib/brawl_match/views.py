@@ -135,7 +135,7 @@ class BrawlPlayerListView(ManualListView):
 	async def action_add(self, player, values, player_info, **kwargs):
 		if len(self.app.match_players) < 3:
 			await self.app.register_match_task(self.app.add_player_to_match, player, player_info)
-		elif len(self.app.match_players) < 4:
+		else:
 			await self.app.register_match_task(self.app.add_player_to_match, player, player_info)
 			# Maybe not an ideal solution, but works for now
 			await self.hide([player.login])

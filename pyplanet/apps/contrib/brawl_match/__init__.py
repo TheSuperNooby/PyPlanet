@@ -240,8 +240,5 @@ class BrawlMatch(AppConfig):
 			await self.instance.chat(f'{self.chat_prefix}{message}')
 
 	async def register_match_task(self, func, *args):
-		if args:
-			self.match_tasks.append(asyncio.create_task(func(*args)))
-		else:
-			self.match_tasks.append(asyncio.create_task(func()))
+		self.match_tasks.append(asyncio.create_task(func(*args)))
 
