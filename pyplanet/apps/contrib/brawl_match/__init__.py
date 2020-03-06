@@ -73,8 +73,6 @@ class BrawlMatch(AppConfig):
 
 
 	async def start_match(self, player):
-		await self.set_match_settings()
-
 		message = f'You started a brawl match. Pick the participants from worst to best seed.'
 		await self.brawl_chat(message, player)
 
@@ -82,7 +80,8 @@ class BrawlMatch(AppConfig):
 
 	async def set_match_settings(self):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
-		await self.instance.gbx('RestartMap')
+		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
+		await self.instance.gbx('NextMap')
 
 		settings = await self.instance.mode_manager.get_settings()
 
@@ -165,8 +164,7 @@ class BrawlMatch(AppConfig):
 			map_name = (await Map.get_by_uid(uid)).name
 			await self.brawl_chat(f'[{index}/{len(self.match_maps)}] {map_name}')
 
-		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
-		await self.instance.gbx('NextMap')
+		await self.set_match_settings()
 
 	async def await_match_start(self):
 		await asyncio.sleep(self.TIME_UNTIL_NEXT_WALL)
