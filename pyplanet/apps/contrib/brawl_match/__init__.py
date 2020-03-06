@@ -70,7 +70,10 @@ class BrawlMatch(AppConfig):
 		)
 
 	async def start_match_command(self, player, *args, **kwargs):
-		await self.register_match_task(self.start_match, player)
+		if self.match_tasks:
+			await self.brawl_chat(f'A match is currently in progress!', player)
+		else:
+			await self.register_match_task(self.start_match, player)
 
 	async def start_match(self, player):
 		message = f'You started a brawl match. Pick the participants from worst to best seed.'
