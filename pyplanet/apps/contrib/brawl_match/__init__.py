@@ -36,6 +36,8 @@ class BrawlMatch(AppConfig):
 		self.chat_prefix = '$i$000.$903Brawl$fff - $z$fff'
 
 		self.match_tasks = []
+		self.backup_script_name = None
+		self.backup_settings = None
 
 	async def on_init(self):
 		await super().on_init()
@@ -65,18 +67,22 @@ class BrawlMatch(AppConfig):
 				perms='brawl_match:match_control',
 				admin=True
 			)
-
 		)
 
 	async def start_match_command(self, player, *args, **kwargs):
 		await self.register_match_task(self.start_match, player)
 
-
 	async def start_match(self, player):
 		message = f'You started a brawl match. Pick the participants from worst to best seed.'
 		await self.brawl_chat(message, player)
 
+		await self.backup_mode_settings()
+
 		await self.choose_players(player=player)
+
+	async def backup_mode_settings(self):
+		self.backup_script_name = await self.instance.mode_manager.get_current_full_script()
+		self.backup_settings = await self.instance.mode_manager.get_settings()
 
 	async def set_match_settings(self):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
@@ -86,7 +92,6 @@ class BrawlMatch(AppConfig):
 
 		await self.instance.gbx('RestartMap')
 		await self.instance.gbx('NextMap')
-
 
 	async def set_settings(self, map):
 		settings = await self.instance.mode_manager.get_settings()
@@ -198,6 +203,16 @@ class BrawlMatch(AppConfig):
 				signal.unregister(target)
 		self.match_maps = self.brawl_maps.copy()
 		self.match_players = []
+
+		await self.reset_backup()
+
+	async def reset_backup(self):
+		if not (self.backup_script_name and self.backup_settings):
+			return
+		await self.instance.mode_manager.set_next_script(self.backup_script_name)
+		await self.instance.gbx('RestartMap')
+		await self.instance.mode_manager.update_next_settings(self.backup_settings)
+
 
 	async def update_finish_timeout(self, timeout):
 		settings = await self.instance.mode_manager.get_settings()
