@@ -91,7 +91,7 @@ class BrawlMatch(AppConfig):
 		await self.instance.mode_manager.set_next_script('Cup.Script.txt')
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
 
-		asyncio.ensure_future(self.instance.gbx('NextMap'))
+		await self.instance.gbx('NextMap')
 		await self.set_settings()
 
 
@@ -241,4 +241,3 @@ class BrawlMatch(AppConfig):
 
 	async def register_match_task(self, func, *args):
 		self.match_tasks.append(asyncio.create_task(func(*args)))
-
