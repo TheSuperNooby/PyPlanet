@@ -92,6 +92,8 @@ class BrawlMatch(AppConfig):
 		await self.instance.map_manager.set_next_map(await Map.get_by_uid(self.match_maps[0][0]))
 
 		await self.instance.gbx('NextMap')
+		while await self.instance.mode_manager.get_current_full_script() != 'Cup.Script.txt':
+			await asyncio.sleep(1)
 		await self.set_settings()
 
 
@@ -106,8 +108,9 @@ class BrawlMatch(AppConfig):
 		settings['S_PointsRepartition'] = '10,6,4,3'
 		settings['S_RoundsPerMap'] = 3
 		settings['S_WarmUpNb'] = 1
+		settings['S_WarmUpDuration'] = -1
 
-		await self.instance.mode_manager.update_next_settings(settings)
+		await self.instance.mode_manager.update_settings(settings)
 
 	async def choose_players(self, player):
 		player_view = BrawlPlayerListView(self)
