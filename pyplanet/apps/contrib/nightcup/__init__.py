@@ -20,6 +20,7 @@ class NightCup(AppConfig):
 
 		self.ta_finishers = []
 		self.ko_qualified = []
+		self.rounds_played = 0
 
 		self.settings_long = [
 			{
@@ -48,6 +49,20 @@ class NightCup(AppConfig):
 				'type': int,
 				'name': 'nc_wu_duration',
 				'description': 'Length of warmups for players to load the map',
+				'value': 6
+			},
+			{
+				'default': '5',
+				'type': int,
+				'name': 'nc_breaks',
+				'description': 'How many rounds during KO phase before a break',
+				'value': 5
+			},
+			{
+				'default': '60',
+				'type': int,
+				'name': 'nc_break_timer',
+				'description': 'How long each break should last',
 				'value': 6
 			}
 		]
@@ -239,7 +254,7 @@ class NightCup(AppConfig):
 		for view in self.open_views:
 			await view.destroy()
 			print(view)
-			del view
+			view = None
 			print(view)
 		self.open_views.clear()
 
@@ -319,6 +334,7 @@ class NightCup(AppConfig):
 		round_scores = (await self.instance.gbx('Trackmania.GetScores'))['players']
 		if not any([player['roundpoints'] != 0 for player in round_scores]):
 			return
+
 		nr_kos = await self.get_nr_kos(len(self.ko_qualified))
 		round_scores = [(record['login'], record['prevracetime']) for record in round_scores if record['login'] in self.ko_qualified]
 
@@ -353,6 +369,30 @@ class NightCup(AppConfig):
 		await self.nc_chat(f'Players knocked out: {kos_string}')
 
 		self.ko_qualified = [p for p in self.ko_qualified if p in qualified]
+
+		await self.nc_break()
+
+	async def nc_break(self):
+		self.rounds_played += 1
+
+		if self.rounds_played % self.settings['nc_breaks']:
+			await self.start_break()
+
+	async def start_break(self):
+		break_timer = TimerView(self)
+		self.open_views.append(break_timer)
+		break_timer.title = f"Break ends in {await self.format_time(self.settings['nc_break_timer'])}"
+		for player in self.instance.player_manager.online:
+			await break_timer.display(player)
+
+		secs = 0
+		while self.settings['nc_break_timer'] - secs > 0 and break_timer:
+			break_timer.title = f"Break ends in {await self.format_time(self.settings['nc_break_timer'] - secs)}"
+			for player in self.instance.player_manager.online:
+				if break_timer:
+					await break_timer.display(player)
+			await asyncio.sleep(1)
+			secs += 1
 
 
 	async def force_spec_or_kick(self, p):
