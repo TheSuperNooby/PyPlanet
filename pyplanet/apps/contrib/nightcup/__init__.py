@@ -56,7 +56,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'name': 'nc_breaks',
 				'description': 'How many rounds during KO phase before a break',
-				'value': 5
+				'value': 1
 			},
 			{
 				'default': '60',
@@ -317,7 +317,7 @@ class NightCup(AppConfig):
 			await self.reset_server()
 			return
 
-		self.ko_qualified = [p for (i,p) in enumerate(self.ta_finishers) if i < len(self.ta_finishers)/2]
+		self.ko_qualified = self.ta_finishers
 		for p in self.instance.player_manager.online_logins:
 			if p in self.ta_finishers:
 				if p in self.ko_qualified:
@@ -375,8 +375,9 @@ class NightCup(AppConfig):
 	async def nc_break(self):
 		self.rounds_played += 1
 
-		if self.rounds_played % self.settings['nc_breaks']:
-			await self.start_break()
+		# if not self.rounds_played % self.settings['nc_breaks']:
+
+		await self.start_break()
 
 	async def start_break(self):
 		break_timer = TimerView(self)
@@ -393,6 +394,10 @@ class NightCup(AppConfig):
 					await break_timer.display(player)
 			await asyncio.sleep(1)
 			secs += 1
+
+		del break_timer
+
+		await self.instance.gbx('ForceEndRound')
 
 
 	async def force_spec_or_kick(self, p):
