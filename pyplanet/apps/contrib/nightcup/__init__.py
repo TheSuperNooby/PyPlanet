@@ -50,7 +50,7 @@ class NightCup(AppConfig):
 				'description': 'Time before TA phase starts',
 				'type': int,
 				'default': '60',
-				'value': 6
+				'value': 60
 
 			},
 			{
@@ -58,35 +58,35 @@ class NightCup(AppConfig):
 				'description': 'Length of TA phase',
 				'type': int,
 				'default': '2700',
-				'value': 40
+				'value': 2700
 			},
 			{
 				'name': 'nc_time_until_ko',
 				'description': 'Time between TA phase and KO phase',
 				'type': int,
 				'default': '600',
-				'value': 6
+				'value': 600
 			},
 			{
 				'name': 'nc_ta_wu_duration',
 				'description': 'Length of warmups before TA for players to load the map',
 				'type': int,
 				'default': '60',
-				'value': 6
+				'value': 60
 			},
 			{
 				'name': 'nc_ko_wu_duration',
 				'description': 'Length of warmups before KO for players to load the map',
 				'type': int,
 				'default': '60',
-				'value': 6
+				'value': 60
 			},
 			{
 				'name': 'nc_finish_timeout',
 				'description': 'Timeout after first player finishes in KO phase',
 				'type': int,
 				'default': '90',
-				'value': 20
+				'value': 90
 			}
 		]
 
