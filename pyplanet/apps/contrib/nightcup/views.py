@@ -1,9 +1,11 @@
 import asyncio
-from xmlrpc.client import Fault
+import math
 
-from pyplanet.views.generics.widget import WidgetView
+from pyplanet.utils import times
+from pyplanet.views.generics.widget import WidgetView, TimesWidgetView
 from pyplanet.views import TemplateView
 from pyplanet.views.generics import ManualListView
+
 
 class TimerView(WidgetView):
 	widget_x = 0
@@ -16,6 +18,7 @@ class TimerView(WidgetView):
 		super().__init__()
 		self.app = app
 		self.manager = app.context.ui
+
 
 class SettingsListView(ManualListView):
 	title = 'NightCup settings'
@@ -33,7 +36,7 @@ class SettingsListView(ManualListView):
 			'sorting': True,
 			'searching': True,
 			'width': 60,
-			'type':'label'
+			'type': 'label'
 		}
 
 		self.child = None
@@ -162,9 +165,19 @@ class NcSettingEditView(TemplateView):
 		value = values['setting_value_field']
 
 		try:
+			if self.setting['name'] in ['nc_time_until_ta', 'nc_time_until_ko']:
+				if int(value) < 5 and int(value) != 0 and int(value) != -1:
+					message = '$i$f00Time can not be shorter than 5 seconds.'
+					await self.parent.app.instance.chat(message, player)
+					return
+			if self.setting['name'] == 'nc_ta_length':
+				if int(value) < 0:
+					message = '$i$f00TA length cannot be negative.'
+					await self.parent.app.instance.chat(message, player)
+					return
 			settings_long = (await self.parent.get_data())
 			settings = {setting['name']: setting['value'] for setting in settings_long}
-			settings[self.setting['name']] = int(value)
+			settings[self.setting['name']] = type(settings[self.setting['name']])(value)
 			await self.parent.app.update_settings(settings)
 		except ValueError:
 			message = '$i$f00You have entered a value with a wrong type.'
@@ -182,3 +195,141 @@ class NcSettingEditView(TemplateView):
 			)
 			self.response_future.set_result(self.setting)
 			self.response_future.done()
+
+
+class NcStandingsWidget(TimesWidgetView):
+	widget_x = -160
+	widget_y = 70.5
+	top_entries = 5
+	z_index = 30
+	size_x = 38
+	size_y = 113
+	title = 'NightCup'
+
+	template_name = 'nightcup/ncstandings.xml'
+
+	def __init__(self, app, manager):
+		super().__init__(self)
+		self.app = app
+		self.standings_manager = manager
+		self.manager = app.context.ui
+		self.id = 'pyplanet__widgets_nightcupstandings'
+
+		self.record_amount = 30
+
+	async def get_all_player_data(self, logins):
+		data = await super().get_all_player_data(logins)
+
+		# This determines the amount of records that will fit in the widget
+		max_n = min(math.floor((self.size_y - 5.5) / 3.3), self.record_amount)
+
+		scores = {}
+
+		if self.app.ta_active:
+			# Handling with TA data
+			round_data = self.standings_manager.current_rankings
+		elif self.app.ko_active:
+			# Handling with KO data
+			round_data = self.standings_manager.player_cps
+		else:
+			# In any other case there is no data
+			return data
+
+		for player in self.app.instance.player_manager.online:
+			focused_index = len(round_data) + 1
+			focused = player
+			if player:
+				spectator_status = (await self.app.instance.gbx('GetPlayerInfo', player.login))['SpectatorStatus']
+				target_id = spectator_status // 10000
+				if target_id:
+					# Player is spectating someone
+					target = await self.app.instance.player_manager.get_player_by_id(target_id)
+					focused = target or player
+			if focused:
+				if self.app.ta_active:
+					player_record = [x for x in round_data if x['login'] == focused.login]
+				elif self.app.ko_active:
+					player_record = [x for x in round_data if x.player.login == focused.login]
+				else:
+					return data
+				if player_record:
+					focused_index = round_data.index(player_record[0]) + 1
+
+			records = list(round_data[:self.top_entries])
+			if self.app.instance.performance_mode:
+				records += round_data[self.top_entries:max_n]
+				custom_start_index = self.top_entries + 1
+			else:
+				if focused_index >= len(round_data):
+					# No personal record, get the last records
+					records_start = max(len(round_data) - max_n + self.top_entries, self.top_entries)
+
+					# If start of current slice is in the top entries, add more records below
+					records += list(round_data[records_start:])
+					custom_start_index = records_start + 1
+				else:
+					if focused_index <= self.top_entries:
+						# Player record is in top X, get following records (top entries + 1 onwards)
+						records += round_data[self.top_entries:max_n]
+						custom_start_index = self.top_entries + 1
+					else:
+						# Player record is not in top X, get records around player record
+						# Same amount above the record as below, except when not possible (favors above)
+						records_to_fill = max_n - self.top_entries
+						start_point = focused_index - math.ceil((records_to_fill - 1) / 2) - 1
+						end_point = focused_index + math.floor((records_to_fill - 1) / 2) - 1
+
+						# If end of current slice is outside the list, add more records above
+						if end_point > len(round_data):
+							end_difference = end_point - len(round_data)
+							# If start of current slice is in the top entries, add more records below
+							start_point = (start_point - end_difference)
+						# If start of current slice is in the top entries, add more records below
+						if start_point < self.top_entries:
+							start_point = self.top_entries
+						records += round_data[start_point:start_point + records_to_fill]
+						custom_start_index = start_point + 1
+
+			list_records = list()
+			index = 1
+			for record in records:
+				list_record = dict()
+				if index == focused_index:
+					list_record['color'] = '$0ff'
+				elif index <= self.top_entries:
+					list_record['color'] = '$ff0'
+				else:
+					list_record['color'] = '$fff'
+
+				if self.app.ta_active:
+					list_record['virt_qualified'] = index - 1 < await self.app.get_nr_qualified()
+					list_record['virt_eliminated'] = not list_record['virt_qualified']
+					list_record['col0'] = index
+					list_record['login'] = record['login']
+					list_record['nickname'] = record['nickname']
+					list_record['time'] = times.format_time(int(record['score']))
+				elif self.app.ko_active:
+					if record.player.login in self.app.ko_qualified:
+						virt_qualified = [rec.player.login for rec in records if rec.player.login in self.app.ko_qualified]
+						list_record['virt_qualified'] = (virt_qualified.index(record.player.login)) < await self.app.get_nr_qualified()
+						list_record['virt_eliminated'] = not list_record['virt_qualified']
+					else:
+						list_record['virt_qualified'] = False
+						list_record['virt_eliminated'] = False
+					list_record['col0'] = 'fin' if record.cp == -1 else str(record.cp)
+					list_record['login'] = record.player.login
+					list_record['nickname'] = record.player.nickname
+					list_record['time'] = times.format_time(record.time)
+
+
+				index = custom_start_index if index == self.top_entries else index + 1
+
+				list_records.append(list_record)
+			data[player.login] = dict(scores=list_records)
+		return data
+
+	async def handle_catch_all(self, player, action, values, **kwargs):
+		if str(action).startswith('spec_'):
+			target = action[5:]
+			await self.app.spec_player(player=player, target_login=target)
+
