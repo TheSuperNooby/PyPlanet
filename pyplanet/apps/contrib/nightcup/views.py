@@ -303,7 +303,7 @@ class NcStandingsWidget(TimesWidgetView):
 
 				list_record['extended'] = False
 				if self.app.ta_active:
-					list_record['cp'] = 'fin' if record['cp'] == -1 else str(record['cp'])
+					list_record['cp'] = '$i' if record['cp'] == -1 else str(record['cp'])
 					if record['split'] < 0:
 						list_record['split_color'] = '$0f0'
 						list_record['split'] = '-' + times.format_time(abs(record['split']))
@@ -311,11 +311,11 @@ class NcStandingsWidget(TimesWidgetView):
 						list_record['split_color'] = '$f44'
 						list_record['split'] = '+' + times.format_time(abs(record['split']))
 
-					if player.login in ['astronautj', 'otarus', 'mortarmonkey']:
+					if player.login in ['astronautj', 'otarus', 'mortarmonkey', 'sakeyram']:
 						list_record['extended'] = True
 
 					list_record['virt_qualified'] = index - 1 < await self.app.get_nr_qualified()
-					list_record['virt_eliminated'] = not list_record['virt_qualified']
+					list_record['virt_eliminated'] = index - 1 < len(self.app.ta_finishers)
 					list_record['col0'] = index
 					list_record['login'] = record['login']
 					list_record['nickname'] = record['nickname']
@@ -328,7 +328,7 @@ class NcStandingsWidget(TimesWidgetView):
 					else:
 						list_record['virt_qualified'] = False
 						list_record['virt_eliminated'] = False
-					list_record['col0'] = 'fin' if record.cp == -1 else str(record.cp)
+					list_record['col0'] = '$i' if record.cp == -1 else str(record.cp)
 					list_record['login'] = record.player.login
 					list_record['nickname'] = record.player.nickname
 					list_record['time'] = times.format_time(record.time)

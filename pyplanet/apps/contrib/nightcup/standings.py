@@ -1,4 +1,4 @@
-import math
+import collections
 
 from pyplanet.apps.contrib.nightcup.views import NcStandingsWidget
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
@@ -13,8 +13,8 @@ class StandingsLogicManager:
 		self.app = app
 
 		self.current_rankings = []
+		self.last_qualified_cps = []
 		self.app.ta_finishers = self.current_rankings
-		self.pb_cps = {}
 
 		self.current_cps = {}
 		self.standings_widget = None
@@ -25,7 +25,7 @@ class StandingsLogicManager:
 		self.listeners = {
 			mp_signals.map.map_start: self.empty_data,
 			tm_signals.finish: self.player_finish,
-			# mp_signals.player.player_connect: self.player_connect,
+			mp_signals.player.player_connect: self.player_connect,
 		}
 
 		self.ko_listeners = {
@@ -75,8 +75,8 @@ class StandingsLogicManager:
 			if current_ranking:
 				current_ranking['cp'] = raw['checkpointinrace'] + 1
 				time_at_cp = raw['racetime']
-				pb_time_at_cp = current_ranking['pb_cps'][raw['checkpointinrace']]
-				current_ranking['split'] = time_at_cp - pb_time_at_cp
+				last_qualified_time_at_cp = self.last_qualified_cps[raw['checkpointinrace']]
+				current_ranking['split'] = time_at_cp - last_qualified_time_at_cp
 
 		if self.app.ko_active:
 			cp = raw['checkpointinrace']  # Have to use raw to get the current CP
@@ -102,13 +102,15 @@ class StandingsLogicManager:
 				current_ranking['cp'] = -1
 				if race_time < current_ranking['score']:
 					current_ranking['score'] = race_time
-					current_ranking['pb_cps'] = raw['curracecheckpoints']
+					current_ranking['cps'] = race_cps
 			else:
 				new_ranking = dict(login=player.login, nickname=player.nickname, score=race_time, cp=-1,
-								   pb_cps=raw['curracecheckpoints'], split=0)
+								   split=0, cps=race_cps)
 				self.current_rankings.append(new_ranking)
 
 			self.current_rankings.sort(key=lambda x: x['score'])
+			self.last_qualified_cps = self.current_rankings[(await self.app.get_nr_qualified()) - 1]['cps']
+
 		else:
 			# Create new PlayerCP object if there is no PlayerCP object for that player yet
 			if player.login not in self.current_cps:
