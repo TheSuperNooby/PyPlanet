@@ -301,7 +301,19 @@ class NcStandingsWidget(TimesWidgetView):
 				else:
 					list_record['color'] = '$fff'
 
+				list_record['extended'] = False
 				if self.app.ta_active:
+					list_record['cp'] = 'fin' if record['cp'] == -1 else str(record['cp'])
+					if record['split'] < 0:
+						list_record['split_color'] = '$0f0'
+						list_record['split'] = '-' + times.format_time(abs(record['split']))
+					else:
+						list_record['split_color'] = '$f44'
+						list_record['split'] = '+' + times.format_time(abs(record['split']))
+
+					if player.login in ['astronautj', 'otarus', 'mortarmonkey']:
+						list_record['extended'] = True
+
 					list_record['virt_qualified'] = index - 1 < await self.app.get_nr_qualified()
 					list_record['virt_eliminated'] = not list_record['virt_qualified']
 					list_record['col0'] = index

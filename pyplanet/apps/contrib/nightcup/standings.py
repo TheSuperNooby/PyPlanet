@@ -14,6 +14,7 @@ class StandingsLogicManager:
 
 		self.current_rankings = []
 		self.app.ta_finishers = self.current_rankings
+		self.pb_cps = {}
 
 		self.current_cps = {}
 		self.standings_widget = None
@@ -24,14 +25,14 @@ class StandingsLogicManager:
 		self.listeners = {
 			mp_signals.map.map_start: self.empty_data,
 			tm_signals.finish: self.player_finish,
-			mp_signals.player.player_connect: self.player_connect,
+			# mp_signals.player.player_connect: self.player_connect,
 		}
 
 		self.ko_listeners = {
 			tm_signals.waypoint: self.player_cp,
 			tm_signals.start_line: self.player_start,
-			mp_signals.player.player_disconnect: self.player_disconnect,
-			mp_signals.player.player_enter_spectator_slot: self.player_enter_spec
+			mp_signals.player.player_disconnect: self.player_leave_play,
+			mp_signals.player.player_enter_spectator_slot: self.player_leave_play
 		}
 
 	async def start(self):
@@ -69,29 +70,42 @@ class StandingsLogicManager:
 
 	# When a player passes a CP
 	async def player_cp(self, player, race_time, raw, *args, **kwargs):
-		cp = int(raw['checkpointinrace'])  # Have to use raw to get the current CP
-		# Create new PlayerCP object if there is no PlayerCP object for that player yet
-		if player.login not in self.current_cps:
-			self.current_cps[player.login] = PlayerCP(player)
-		self.current_cps[player.login].cp = cp + 1  # +1 because checkpointinrace starts at 0
-		self.current_cps[player.login].time = race_time
+		if self.app.ta_active:
+			current_ranking = next((x for x in self.current_rankings if x['login'] == player.login), None)
+			if current_ranking:
+				current_ranking['cp'] = raw['checkpointinrace'] + 1
+				time_at_cp = raw['racetime']
+				pb_time_at_cp = current_ranking['pb_cps'][raw['checkpointinrace']]
+				current_ranking['split'] = time_at_cp - pb_time_at_cp
+
+		if self.app.ko_active:
+			cp = raw['checkpointinrace']  # Have to use raw to get the current CP
+			# Create new PlayerCP object if there is no PlayerCP object for that player yet
+			if player.login not in self.current_cps:
+				self.current_cps[player.login] = PlayerCP(player)
+			self.current_cps[player.login].cp = cp + 1  # +1 because checkpointinrace starts at 0
+			self.current_cps[player.login].time = race_time
 		await self.update_standings_widget()
 
 	# When a player starts the race
 	async def player_start(self, player, *args, **kwargs):
-		if player.login not in self.current_cps:
+		if self.app.ko_active and player.login not in self.current_cps:
 			self.current_cps[player.login] = PlayerCP(player)
-		await self.update_standings_widget()
+			await self.update_standings_widget()
 
 	# When a player passes the finish line
 	async def player_finish(self, player, race_time, race_cps, is_end_race, raw, *args, **kwargs):
 		if self.app.ta_active:
-			current_rankings = [x for x in self.current_rankings if x['login'] == player.login]
-			if current_rankings:
-				if race_time < current_rankings[0]['score']:
-					current_rankings[0]['score'] = race_time
+			current_ranking = next((x for x in self.current_rankings if x['login'] == player.login), None)
+			if current_ranking:
+				current_ranking['split'] = 0
+				current_ranking['cp'] = -1
+				if race_time < current_ranking['score']:
+					current_ranking['score'] = race_time
+					current_ranking['pb_cps'] = raw['curracecheckpoints']
 			else:
-				new_ranking = dict(login=player.login, nickname=player.nickname, score=race_time)
+				new_ranking = dict(login=player.login, nickname=player.nickname, score=race_time, cp=-1,
+								   pb_cps=raw['curracecheckpoints'], split=0)
 				self.current_rankings.append(new_ranking)
 
 			self.current_rankings.sort(key=lambda x: x['score'])
@@ -104,27 +118,30 @@ class StandingsLogicManager:
 			if is_end_race:
 				self.current_cps[player.login].cp = -1
 			else:
-				self.current_cps[player.login].cp = int(
-					raw['checkpointinrace']) + 1  # Otherwise just update the current cp
+				self.current_cps[player.login].cp = raw['checkpointinrace'] + 1  # Otherwise just update the current cp
 			self.current_cps[player.login].time = race_time
 
 		await self.update_standings_widget()
 
-	# When a player connects
+	# # When a player connects
 	async def player_connect(self, player, *args, **kwargs):
-		await self.update_standings_widget()
+		await self.update_standings_widget(player)
 
-	# When a player disconnects
-	async def player_disconnect(self, player, *args, **kwargs):
-		# Remove the current CP from the widget when a player leaves the server
-		self.current_cps.pop(player.login, None)
-		await self.update_standings_widget()
+	# When a player enters spectator mode or disconnects
+	async def player_leave_play(self, player, *args, **kwargs):
+		if self.app.ta_active:
+			current_ranking = next((x for x in self.current_rankings if x['login'] == player.login), None)
+			if current_ranking:
+				current_ranking['cp'] = '📷'
+				current_ranking['split'] = 0
+				await self.update_standings_widget()
 
-	# When a player enters spectator mode
-	async def player_enter_spec(self, player, *args, **kwargs):
-		# Remove the current CP from the widget when a player starts to spectate
-		self.current_cps.pop(player.login, None)
-		await self.update_standings_widget()
+		# Remove the current CP from the widget only when the player is already out and goes into spec/leaves the server
+		if self.app.ko_active:
+			virt_qualified = [player for player in self.current_cps if player in self.app.ko_qualified]
+			if player.login not in virt_qualified or virt_qualified.index(player.login) >= await self.app.get_nr_qualified():
+				self.current_cps.pop(player.login, None)
+				await self.update_standings_widget()
 
 	# When the map ends
 	async def empty_data(self, *args, **kwargs):
@@ -133,7 +150,7 @@ class StandingsLogicManager:
 		await self.update_standings_widget()
 
 	# Update the view for all players
-	async def update_standings_widget(self):
+	async def update_standings_widget(self, player=None):
 		if self.app.ko_active:
 			# Used for sorting the PlayerCP objects by the 1. CP and 2. the time (Finished players are always on top)
 			def keyfunc(key):
@@ -154,7 +171,10 @@ class StandingsLogicManager:
 		# If standings_widget got destroyed already, displaying it will raise an AttributeError.
 		# This problem usually occurs when nightcup is stopped while the widget is receiving updates
 		try:
-			await self.standings_widget.display()  # Update the widget for all players
+			if player:
+				await self.standings_widget.display(player)  # Update the widget for all players
+			else:
+				await self.standings_widget.display()
 		except AttributeError:
 			pass
 

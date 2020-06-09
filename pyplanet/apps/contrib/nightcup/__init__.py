@@ -50,7 +50,7 @@ class NightCup(AppConfig):
 				'description': 'Time before TA phase starts',
 				'type': int,
 				'default': '60',
-				'value': 60
+				'value': -1
 
 			},
 			{
@@ -58,35 +58,35 @@ class NightCup(AppConfig):
 				'description': 'Length of TA phase',
 				'type': int,
 				'default': '2700',
-				'value': 2700
+				'value': -1
 			},
 			{
 				'name': 'nc_time_until_ko',
 				'description': 'Time between TA phase and KO phase',
 				'type': int,
 				'default': '600',
-				'value': 600
+				'value': -1
 			},
 			{
 				'name': 'nc_ta_wu_duration',
 				'description': 'Length of warmups before TA for players to load the map',
 				'type': int,
 				'default': '60',
-				'value': 60
+				'value': -1
 			},
 			{
 				'name': 'nc_ko_wu_duration',
 				'description': 'Length of warmups before KO for players to load the map',
 				'type': int,
 				'default': '60',
-				'value': 60
+				'value': -1
 			},
 			{
 				'name': 'nc_finish_timeout',
 				'description': 'Timeout after first player finishes in KO phase',
 				'type': int,
 				'default': '90',
-				'value': 90
+				'value': 10
 			}
 		]
 
@@ -362,7 +362,7 @@ class NightCup(AppConfig):
 	async def get_qualified(self, count, time):
 		await self.unregister_signals([self.get_qualified])
 
-		self.ko_qualified = [p['login'] for (i, p) in enumerate(self.ta_finishers) if i < len(self.ta_finishers) / 2]
+		self.ko_qualified = [p['login'] for (i, p) in enumerate(self.ta_finishers) if i < len(self.ta_finishers)]
 		try:
 			for p in self.instance.player_manager.online_logins:
 				if p in self.ko_qualified:
@@ -469,7 +469,7 @@ class NightCup(AppConfig):
 				await self.nc_chat('$i$f00Player is currently not on the server', player)
 				continue
 			self.ko_qualified.append(player_to_add)
-			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_add)).nickname} has been added to the '
+			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_add)).nickname} {self.chat_reset} has been added to the '
 							   f'qualified list')
 
 	async def remove_qualified(self, player, data, **kwargs):
@@ -482,7 +482,7 @@ class NightCup(AppConfig):
 				await self.nc_chat('$i$f00Player is currently not in the qualified list', player)
 				continue
 			self.ko_qualified.remove(player_to_remove)
-			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_remove)).nickname} '
+			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_remove)).nickname} {self.chat_reset}'
 							   f'has been removed from the qualified list')
 
 	async def set_ui_elements(self):
