@@ -52,7 +52,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x != 0 or x != -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '60',
-				'value': -1,
+				'value': 60,
 			},
 			{
 				'name': 'nc_ta_length',
@@ -60,7 +60,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '2700',
-				'value': -1
+				'value': 2700
 			},
 			{
 				'name': 'nc_time_until_ko',
@@ -69,7 +69,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x != 0 or x != -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '600',
-				'value': -1
+				'value': 600
 			},
 			{
 				'name': 'nc_ta_wu_duration',
@@ -77,7 +77,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': -1
+				'value': 60
 			},
 			{
 				'name': 'nc_ko_wu_duration',
@@ -85,7 +85,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': -1
+				'value': 60
 			},
 			{
 				'name': 'nc_finish_timeout',
@@ -93,14 +93,14 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '90',
-				'value': 10
+				'value': 90
 			},
 			{
 				'name': 'qualified_percentage',
 				'description': 'Percentage of TA finishers that will qualify to the KO phase',
 				'type': int,
 				'constraints': [(lambda x: 0 <= x <= 100, 'Percentage must be between 0 and 100')],
-				'default': 50,
+				'default': '50',
 				'value': 50
 			}
 		]
