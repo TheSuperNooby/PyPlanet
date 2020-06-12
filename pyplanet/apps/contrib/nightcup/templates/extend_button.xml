@@ -1,0 +1,9 @@
+{% block toggle %}
+    <frame pos="{{ widget_x }} {{ widget_y }}">
+      <quad pos="0 0" z-index="0" size="{{ size_x }} {{ size_y }}" bgcolor="00000099"/>
+      <label pos="{{ size_x / 2 }} -{{ size_y / 2 }}" z-index="1" size="{{ size_x }} {{ size_y }}"
+             text="{{ title }}" textfont="RadjdhaniMono" action="{{ id }}__toggle_extended"
+             textsize="3" halign="center"
+             valign="center2"/>
+    </frame>
+{% endblock %}

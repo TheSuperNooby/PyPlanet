@@ -165,15 +165,9 @@ class NcSettingEditView(TemplateView):
 		value = values['setting_value_field']
 
 		try:
-			if self.setting['name'] in ['nc_time_until_ta', 'nc_time_until_ko']:
-				if int(value) < 5 and int(value) != 0 and int(value) != -1:
-					message = '$i$f00Time can not be shorter than 5 seconds.'
-					await self.parent.app.instance.chat(message, player)
-					return
-			if self.setting['name'] == 'nc_ta_length':
-				if int(value) < 0:
-					message = '$i$f00TA length cannot be negative.'
-					await self.parent.app.instance.chat(message, player)
+			for constraint, msg in self.setting['constraints']:
+				if not constraint(self.setting['type'](value)):
+					await self.parent.app.instance.chat(msg, player)
 					return
 			settings_long = (await self.parent.get_data())
 			settings = {setting['name']: setting['value'] for setting in settings_long}
@@ -238,8 +232,11 @@ class NcStandingsWidget(TimesWidgetView):
 		for player in self.app.instance.player_manager.online:
 			focused_index = len(round_data) + 1
 			focused = player
+			spectator_status = (await self.app.instance.gbx('GetPlayerInfo', player.login))['SpectatorStatus']
+
+			player_extended = self.standings_manager.extended_data[player.login]
+			extended = player_extended['spec'] if spectator_status else player_extended['play']
 			if player:
-				spectator_status = (await self.app.instance.gbx('GetPlayerInfo', player.login))['SpectatorStatus']
 				target_id = spectator_status // 10000
 				if target_id:
 					# Player is spectating someone
@@ -301,7 +298,8 @@ class NcStandingsWidget(TimesWidgetView):
 				else:
 					list_record['color'] = '$fff'
 
-				list_record['extended'] = False
+				list_record['extended'] = extended if self.app.ta_active else False
+
 				if self.app.ta_active:
 					list_record['cp'] = '$i' if record['cp'] == -1 else str(record['cp'])
 					if record['split'] < 0:
@@ -311,15 +309,12 @@ class NcStandingsWidget(TimesWidgetView):
 						list_record['split_color'] = '$f44'
 						list_record['split'] = '+' + times.format_time(abs(record['split']))
 
-					if player.login in ['astronautj', 'otarus', 'mortarmonkey', 'sakeyram']:
-						list_record['extended'] = True
-
 					list_record['virt_qualified'] = index - 1 < await self.app.get_nr_qualified()
 					list_record['virt_eliminated'] = index - 1 < len(self.app.ta_finishers)
 					list_record['col0'] = index
 					list_record['login'] = record['login']
 					list_record['nickname'] = record['nickname']
-					list_record['time'] = times.format_time(int(record['score']))
+					list_record['time'] = times.format_time(record['score']) if record['score'] > 0 else 'DNF'
 				elif self.app.ko_active:
 					if record.player.login in self.app.ko_qualified:
 						virt_qualified = [rec.player.login for rec in records if rec.player.login in self.app.ko_qualified]
@@ -345,3 +340,30 @@ class NcStandingsWidget(TimesWidgetView):
 			target = action[5:]
 			await self.app.spec_player(player=player, target_login=target)
 
+
+class ExtendButtonView(WidgetView):
+	widget_x = -124.5
+	widget_y = 70.5
+
+	size_x = 6
+	size_y = 6
+	template_name = 'nightcup/extend_button.xml'
+
+	def __init__(self, app, manager):
+		super().__init__()
+		self.app = app
+		self.manager = app.context.ui
+		self.standings_logic_manager = manager
+
+		self.titles = {
+			True: '$f00',
+			False: '$0f0'
+		}
+
+		self.subscribe('toggle_extended', self.toggle_extended)
+
+	async def toggle_extended(self, player, action, values, **kwargs):
+		await self.standings_logic_manager.toggle_extended(player)
+
+	async def update_title(self, extended):
+		self.title = self.titles[extended]
