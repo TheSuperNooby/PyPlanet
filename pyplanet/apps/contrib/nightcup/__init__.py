@@ -96,7 +96,7 @@ class NightCup(AppConfig):
 				'value': 90
 			},
 			{
-				'name': 'qualified_percentage',
+				'name': 'nc_qualified_percentage',
 				'description': 'Percentage of TA finishers that will qualify to the KO phase',
 				'type': int,
 				'constraints': [(lambda x: 0 <= x <= 100, 'Percentage must be between 0 and 100')],
@@ -379,7 +379,7 @@ class NightCup(AppConfig):
 		await self.unregister_signals([self.get_qualified])
 
 		self.ko_qualified = [p['login'] for (i, p) in enumerate(self.ta_finishers)
-							 if i * 100 < round(len(self.ta_finishers) * self.settings['qualified_percentage'], 1)]
+							 if i * 100 < round(len(self.ta_finishers) * self.settings['nc_qualified_percentage'], 1)]
 		try:
 			for p in self.instance.player_manager.online_logins:
 				if p in self.ko_qualified:
@@ -613,7 +613,7 @@ class NightCup(AppConfig):
 
 	async def get_nr_qualified(self):
 		if self.ta_active:
-			return math.ceil(round(len(self.ta_finishers) / 100 * self.settings['qualified_percentage'], 1))
+			return math.ceil(round(len(self.ta_finishers) / 100 * self.settings['nc_qualified_percentage'], 1))
 		if self.ko_active:
 			return len(self.ko_qualified) - await get_nr_kos(len(self.ko_qualified))
 		return -1
