@@ -152,6 +152,7 @@ class StandingsLogicManager:
 			if player.login not in self.current_cps:
 				self.current_cps[player.login] = PlayerCP(player)
 			self.current_cps[player.login].time = race_time
+			self.current_cps[player.login].cp = -1
 
 		await self.update_standings_widget()
 

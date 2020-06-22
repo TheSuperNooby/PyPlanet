@@ -420,6 +420,9 @@ class NightCup(AppConfig):
 		dnfs = [p for p in self.ko_qualified if p not in round_logins]
 		kos = round_logins[len(self.ko_qualified) - nr_kos:]
 		qualified = round_logins[:len(self.ko_qualified) - nr_kos]
+
+		self.ko_qualified = [p for p in self.ko_qualified if p in qualified]
+
 		try:
 			for i, p in enumerate(kos, start=1):
 				await self.nc_chat(
@@ -438,8 +441,6 @@ class NightCup(AppConfig):
 		kos = [(await Player.get_by_login(login)).nickname for login in kos]
 		kos_string = f'{self.chat_reset}, '.join(kos)
 		await self.nc_chat(f'Players knocked out: {kos_string}')
-
-		self.ko_qualified = [p for p in self.ko_qualified if p in qualified]
 
 	async def finish_nightcup(self, winner):
 		await self.nc_chat(
