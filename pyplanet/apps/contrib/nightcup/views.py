@@ -232,15 +232,14 @@ class NcStandingsWidget(TimesWidgetView):
 		for player in self.app.instance.player_manager.online:
 			focused_index = len(round_data) + 1
 			focused = player
-			spectator_status = (await self.app.instance.gbx('GetPlayerInfo', player.login))['SpectatorStatus']
 
 			player_extended = self.standings_manager.extended_data[player.login]
-			extended = player_extended['spec'] if spectator_status else player_extended['play']
+			extended = player_extended['play']
 			if player:
-				target_id = spectator_status // 10000
-				if target_id:
+				if player in self.standings_manager.spec_targets:
 					# Player is spectating someone
-					target = await self.app.instance.player_manager.get_player_by_id(target_id)
+					extended = player_extended['spec']
+					target = self.standings_manager.spec_targets[player]
 					focused = target or player
 			if focused:
 				if self.app.ta_active:

@@ -49,7 +49,7 @@ class NightCup(AppConfig):
 				'name': 'nc_time_until_ta',
 				'description': 'Time before TA phase starts',
 				'type': int,
-				'constraints': [(lambda x: x > 5 or x != 0 or x != -1,
+				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '60',
 				'value': 60,
@@ -66,7 +66,7 @@ class NightCup(AppConfig):
 				'name': 'nc_time_until_ko',
 				'description': 'Time between TA phase and KO phase',
 				'type': int,
-				'constraints': [(lambda x: x > 5 or x != 0 or x != -1,
+				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '600',
 				'value': 600

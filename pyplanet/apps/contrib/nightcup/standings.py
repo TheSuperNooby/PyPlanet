@@ -6,7 +6,6 @@ from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.core.ui.exceptions import UIPropertyDoesNotExist
 
 
-
 class StandingsLogicManager:
 
 	def __init__(self, app):
@@ -15,6 +14,7 @@ class StandingsLogicManager:
 		self.current_rankings = []
 		self.last_qualified_cps = []
 		self.app.ta_finishers = []
+		self.spec_targets = {}
 
 		self.current_cps = {}
 		self.standings_widget = None
@@ -29,7 +29,8 @@ class StandingsLogicManager:
 			mp_signals.map.map_start: self.empty_data,
 			tm_signals.finish: self.player_finish,
 			mp_signals.player.player_connect: self.player_connect,
-			tm_signals.start_line: self.player_start
+			tm_signals.start_line: self.player_start,
+			mp_signals.player.player_info_changed: self.player_info_changed
 		}
 
 		self.ko_listeners = {
@@ -61,7 +62,6 @@ class StandingsLogicManager:
 		self.app.instance.ui_manager.properties.set_attribute('round_scores', 'pos', '-126.5 87. 150.')
 		self.app.instance.ui_manager.properties.set_attribute('multilap_info', 'pos', '107., 88., 5.')
 
-
 		self.standings_widget = NcStandingsWidget(self.app, self)
 		await self.standings_widget.display()
 
@@ -71,6 +71,7 @@ class StandingsLogicManager:
 		self.last_qualified_cps.clear()
 		self.current_cps.clear()
 		self.player_cps.clear()
+		self.spec_targets.clear()
 		if self.backup_ui_attributes:
 			for att, value in self.backup_ui_attributes.items():
 				self.app.instance.ui_manager.properties.set_attribute(att, 'pos', value)
@@ -114,6 +115,9 @@ class StandingsLogicManager:
 
 		if self.app.ko_active and player.login not in self.current_cps:
 			self.current_cps[player.login] = PlayerCP(player)
+
+		if player in self.spec_targets:
+			self.spec_targets.pop(player)
 
 		await self.update_standings_widget()
 
@@ -160,6 +164,7 @@ class StandingsLogicManager:
 
 	# When a player enters spectator mode or disconnects
 	async def player_leave_play(self, player, *args, **kwargs):
+		print(player.login)
 		if player and self.app.ta_active:
 			await self.update_extended_widget(player, True)
 
@@ -175,14 +180,32 @@ class StandingsLogicManager:
 		# Remove the current CP from the widget only when the player is already out and goes into spec/leaves the server
 		if self.app.ko_active:
 			virt_qualified = [player for player in self.current_cps if player in self.app.ko_qualified]
-			if player.login not in virt_qualified or virt_qualified.index(player.login) >= await self.app.get_nr_qualified():
+			if player.login not in virt_qualified or virt_qualified.index(
+				player.login) >= await self.app.get_nr_qualified():
+				print(player.login)
 				self.current_cps.pop(player.login, None)
 				await self.update_standings_widget()
+		print()
 
 	# When the map ends
 	async def empty_data(self, *args, **kwargs):
 		self.current_rankings.clear()
 		self.current_cps.clear()
+		await self.update_standings_widget()
+
+	async def player_info_changed(self, player, is_spectator, target_id, spectator_status, target, *args, **kwargs):
+		if not is_spectator:
+			return
+		if type(target_id) == bool:
+			target_id = spectator_status // 10000
+			try:
+				target = await self.app.instance.player_manager.get_player_by_id(target_id)
+			except:
+				target = None
+		if not target or (player in self.spec_targets and self.spec_targets[player] == target):
+			return
+
+		self.spec_targets[player] = target
 		await self.update_standings_widget()
 
 	# Update the view for all players
@@ -247,7 +270,6 @@ class StandingsLogicManager:
 			pass
 
 
-
 class PlayerCP:
 	def __init__(self, player, cp=0, time=0):
 		self.player = player
@@ -255,4 +277,3 @@ class PlayerCP:
 		self.time = time
 		self.virt_qualified = False
 		self.virt_eliminated = False
-
