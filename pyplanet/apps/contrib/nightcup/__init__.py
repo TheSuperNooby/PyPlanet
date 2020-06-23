@@ -122,6 +122,7 @@ class NightCup(AppConfig):
 		self.backup_standings_apps = []
 
 		self.open_views = []
+		self.timer_view = None
 
 		self.standings_logic_manager = StandingsLogicManager(self)
 
@@ -229,21 +230,28 @@ class NightCup(AppConfig):
 
 	async def wait_for_ta_start(self):
 		if not (self.settings['nc_time_until_ta'] == -1 or self.settings['nc_time_until_ta'] == 0):
-			ta_start_timer = TimerView(self)
-			self.open_views.append(ta_start_timer)
-			ta_start_timer.title = f"TA phase starts in {await format_time(self.settings['nc_time_until_ta'])}"
+			self.timer_view = TimerView(self)
+			self.open_views.append(self.timer_view)
+			self.timer_view.title = f"TA phase starts in {await format_time(self.settings['nc_time_until_ta'])}"
 			for player in self.instance.player_manager.online:
-				await display(ta_start_timer, player)
+				await display(self.timer_view, player)
 
 			secs = 0
-			while self.settings['nc_time_until_ta'] - secs > 0 and ta_start_timer:
-				ta_start_timer.title = f"TA phase starts in {await format_time(self.settings['nc_time_until_ta'] - secs)}"
+			while self.settings['nc_time_until_ta'] - secs > 0 and self.timer_view:
+				self.timer_view.title = f"TA phase starts in {await format_time(self.settings['nc_time_until_ta'] - secs)}"
 				for player in self.instance.player_manager.online:
-					await display(ta_start_timer, player)
+					await display(self.timer_view, player)
 				await asyncio.sleep(1)
 				secs += 1
 
-			await ta_start_timer.destroy()
+			if self.timer_view:
+				await self.timer_view.destroy()
+				self.timer_view = None
+
+		await asyncio.sleep(1)
+
+		if not self.nc_active:
+			return
 
 		await self.set_ta_settings()
 		self.ta_active = True
@@ -254,7 +262,9 @@ class NightCup(AppConfig):
 		self.context.signals.listen(mp_signals.flow.round_end, self.wait_for_ko_start)
 
 	async def wait_for_ko_start(self, count, time):
-
+		await asyncio.sleep(1)
+		if not self.nc_active:
+			return
 		self.ta_active = False
 		await self.standings_logic_manager.extended_view.hide()
 		await self.standings_logic_manager.set_standings_widget_title('Current CPs')
@@ -269,23 +279,30 @@ class NightCup(AppConfig):
 
 		await self.restart_map()
 		if not (self.settings['nc_time_until_ko'] == -1 or self.settings['nc_time_until_ko'] == 0):
-			ko_start_timer = TimerView(self)
-			self.open_views.append(ko_start_timer)
-			ko_start_timer.title = f"KO phase starts in {await format_time(self.settings['nc_time_until_ko'])}"
+			self.timer_view = TimerView(self)
+			self.open_views.append(self.timer_view)
+			self.timer_view.title = f"KO phase starts in {await format_time(self.settings['nc_time_until_ko'])}"
 			for player in self.instance.player_manager.online:
-				await display(ko_start_timer, player)
+				await display(self.timer_view, player)
 
 			secs = 0
-			while self.settings['nc_time_until_ko'] - secs > 0 and ko_start_timer:
-				ko_start_timer.title = f"KO phase starts in {await format_time(self.settings['nc_time_until_ko'] - secs)}"
+			while self.settings['nc_time_until_ko'] - secs > 0 and self.timer_view:
+				self.timer_view.title = f"KO phase starts in {await format_time(self.settings['nc_time_until_ko'] - secs)}"
 				for player in self.instance.player_manager.online:
-					await display(ko_start_timer, player)
+					await display(self.timer_view, player)
 				await asyncio.sleep(1)
 				secs += 1
 
-			await ko_start_timer.destroy()
-		if self.nc_active:
-			self.context.signals.listen(mp_signals.map.map_begin, self.set_ko_settings)
+			if self.timer_view:
+				await self.timer_view.destroy()
+				self.timer_view = None
+
+		await asyncio.sleep(1)
+
+		if not self.nc_active:
+			return
+
+		self.context.signals.listen(mp_signals.map.map_begin, self.set_ko_settings)
 
 		await self.instance.map_manager.set_next_map(self.instance.map_manager.current_map)
 		self.ko_active = True
@@ -304,6 +321,8 @@ class NightCup(AppConfig):
 		await self.reset_server()
 
 	async def reset_server(self):
+		self.nc_active = False
+
 		await self.unregister_signals(
 			[self.get_qualified, self.wait_for_ko_start, self.set_ko_settings,
 			 self.knockout_players, self.display_nr_of_kos, self.display_ko_wu_info]
@@ -316,6 +335,7 @@ class NightCup(AppConfig):
 		for view in self.open_views:
 			await view.destroy()
 		self.open_views.clear()
+		self.timer_view = None
 
 		self.ta_finishers.clear()
 		self.ko_qualified.clear()
@@ -331,8 +351,6 @@ class NightCup(AppConfig):
 		await self.instance.mode_manager.set_next_script(self.backup_script_name)
 		await self.instance.mode_manager.update_next_settings(self.backup_settings)
 		await self.restart_map()
-
-		self.nc_active = False
 
 	async def set_ko_settings(self, map):
 		await self.unregister_signals([self.set_ko_settings])

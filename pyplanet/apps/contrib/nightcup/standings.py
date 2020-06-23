@@ -78,6 +78,9 @@ class StandingsLogicManager:
 		if self.standings_widget:
 			await self.standings_widget.destroy()
 			self.standings_widget = None
+		if self.extended_view:
+			await self.extended_view.destroy()
+			self.extended_view = None
 
 	async def set_standings_widget_title(self, title):
 		if self.standings_widget:
