@@ -444,13 +444,13 @@ class NightCup(AppConfig):
 		try:
 			for i, p in enumerate(kos, start=1):
 				await self.nc_chat(
-					f'You have been eliminated from this KO: position {len(qualified) + i}/{len(self.ko_qualified)}', p)
+					f'You have been eliminated from this KO: position {len(qualified) + i}/{len(self.ko_qualified) + nr_kos}', p)
 				await self.force_spec_or_kick(p)
 			for p in dnfs:
-				await self.nc_chat(f'You have been eliminated from this KO: position DNF/{len(self.ko_qualified)}', p)
+				await self.nc_chat(f'You have been eliminated from this KO: position DNF/{len(self.ko_qualified) + nr_kos}', p)
 				await self.force_spec_or_kick(p)
 			for i, p in enumerate(qualified, start=1):
-				await self.nc_chat(f'You are still in! position {i}/{len(self.ko_qualified)}', p)
+				await self.nc_chat(f'You are still in! position {i}/{len(self.ko_qualified) + nr_kos}', p)
 				await self.instance.gbx('ForceSpectator', p, 2)
 		except Fault as e:
 			pass
