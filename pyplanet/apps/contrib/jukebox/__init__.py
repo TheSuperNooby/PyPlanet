@@ -13,7 +13,7 @@ from pyplanet.views.generics.alert import show_alert
 
 class Jukebox(AppConfig):
 	name = 'pyplanet.apps.contrib.jukebox'
-	game_dependencies = ['trackmania', 'shootmania']
+	game_dependencies = ['trackmania', 'trackmania_next', 'shootmania']
 	app_dependencies = ['core.maniaplanet']
 
 	def __init__(self, *args, **kwargs):
@@ -64,7 +64,7 @@ class Jukebox(AppConfig):
 		await self.folder_manager.on_start()
 
 	def insert_map(self, player, map):
-		self.jukebox = [{'player': player, 'map': map}] + self.jukebox
+		self.jukebox.insert(0, {'player': player, 'map': map})
 
 	def append_map(self, player, map):
 		self.jukebox.append({'player': player, 'map': map})

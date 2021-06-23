@@ -16,7 +16,7 @@ from .models import Karma as KarmaModel
 
 class Karma(AppConfig):
 	name = 'pyplanet.apps.contrib.karma'
-	game_dependencies = []
+	game_dependencies = ['trackmania', 'trackmania_next', 'shootmania']
 	app_dependencies = ['core.maniaplanet']
 
 	def __init__(self, *args, **kwargs):
@@ -142,7 +142,7 @@ class Karma(AppConfig):
 					if text == '+++' or text == '+' or text == '+-' or text == '-+' or text == '-' or text == '---':
 						return
 
-				if self.instance.game.game == 'tm':
+				if self.instance.game.game == 'tm' or self.instance.game.game == 'tmnext':
 					finishes_required = await self.setting_finishes_before_voting.get_value()
 					player_finishes = await Score.objects.count(Score.select().where(Score.map_id == self.instance.map_manager.current_map.get_id()).where(Score.player_id == player.get_id()))
 					if player_finishes < finishes_required:
