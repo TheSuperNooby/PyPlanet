@@ -341,6 +341,10 @@ class NcStandingsWidget(TimesWidgetView):
 
 
 class ExtendButtonView(WidgetView):
+
+	# TODO Possibly make this 2 separate widgets, one with extended and one without extended view.
+	# TODO Possibly extend this with a screen during break to show list of qualified players
+
 	widget_x = -124.5
 	widget_y = 70.5
 

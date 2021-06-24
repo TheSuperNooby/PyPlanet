@@ -394,6 +394,9 @@ class NightCup(AppConfig):
 			await self.nc_chat(f'Live with KO now!')
 
 	async def get_qualified(self, count, time):
+
+		# TODO add whitelist list to keep track of players qualified through finishing in pathfinding event.
+
 		await self.unregister_signals([self.get_qualified])
 
 		self.ko_qualified = [p['login'] for (i, p) in enumerate(self.ta_finishers)
