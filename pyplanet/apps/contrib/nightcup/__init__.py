@@ -137,6 +137,8 @@ class NightCup(AppConfig):
 			min_level=2
 		)
 
+		# TODO Add a command to have the admin talk through the plugin to send announcements
+
 		await self.instance.command_manager.register(
 			Command(
 				'start',
