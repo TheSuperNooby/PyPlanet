@@ -593,12 +593,26 @@ class NightCup(AppConfig):
 
 
 	async def move_properties(self, offset):
+		# This functionality is currently broken by an error in PyPlanet code
+		# where requesting attributes is refused in all cases
+
 		properties = ['countdown', 'personal_best_and_rank', 'position']
 		for p in properties:
 			pos = [float(c) for c in self.instance.ui_manager.properties.get_attribute(p, 'pos').split()]
 			pos[1] += offset
 			pos = ' '.join([str(c) for c in pos])
 			self.instance.ui_manager.properties.set_attribute(p, 'pos', pos)
+
+		# Working hardcode fix
+		properties = {
+			'countdown': '153. -7. 5.'.split(),
+			'personal_best_and_rank': '157. -24. 5.'.split(),
+			'position': '150.5 -28. 5.'.split()
+		}
+
+		for k, v in properties:
+			v[1] += offset
+			self.instance.ui_manager.properties.set_attribute(k, 'pos', v)
 
 		# Update properties for every player
 		await self.instance.ui_manager.properties.send_properties()
