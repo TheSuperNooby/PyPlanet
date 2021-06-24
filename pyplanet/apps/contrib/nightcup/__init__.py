@@ -137,8 +137,6 @@ class NightCup(AppConfig):
 			min_level=2
 		)
 
-		# TODO Add a command to have the admin talk through the plugin to send announcements
-
 		await self.instance.command_manager.register(
 			Command(
 				'start',
@@ -201,8 +199,8 @@ class NightCup(AppConfig):
 			)
 		)
 
-	async def nc_chat_command(self, player, *args, *kwargs):
-		await self.nc_chat(args[0])
+	async def nc_chat_command(self, player, data, **kwargs):
+		await self.nc_chat(' '.join(data.message))
 
 	async def start_nc(self, player, *args, **kwargs):
 		if self.nc_active:
