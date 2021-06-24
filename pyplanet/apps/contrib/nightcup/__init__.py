@@ -186,8 +186,23 @@ class NightCup(AppConfig):
 				nargs='*',
 				type=str,
 				required=True
+			),
+			Command(
+				'chat',
+				namespace='nc',
+				target=self.nc_chat_command,
+				perms='nightcup:nc_control',
+				admin=True
+			).add_param(
+				'message',
+				nargs='*',
+				type=str,
+				required=True
 			)
 		)
+
+	async def nc_chat_command(self, player, *args, *kwargs):
+		await self.nc_chat(args[0])
 
 	async def start_nc(self, player, *args, **kwargs):
 		if self.nc_active:
