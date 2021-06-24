@@ -596,12 +596,12 @@ class NightCup(AppConfig):
 		# This functionality is currently broken by an error in PyPlanet code
 		# where requesting attributes is refused in all cases
 
-		properties = ['countdown', 'personal_best_and_rank', 'position']
-		for p in properties:
-			pos = [float(c) for c in self.instance.ui_manager.properties.get_attribute(p, 'pos').split()]
-			pos[1] += offset
-			pos = ' '.join([str(c) for c in pos])
-			self.instance.ui_manager.properties.set_attribute(p, 'pos', pos)
+		# properties = ['countdown', 'personal_best_and_rank', 'position']
+		# for p in properties:
+		# 	pos = [float(c) for c in self.instance.ui_manager.properties.get_attribute(p, 'pos').split()]
+		# 	pos[1] += offset
+		# 	pos = ' '.join([str(c) for c in pos])
+		# 	self.instance.ui_manager.properties.set_attribute(p, 'pos', pos)
 
 		# Working hardcode fix
 		properties = {
