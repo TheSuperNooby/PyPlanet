@@ -605,14 +605,14 @@ class NightCup(AppConfig):
 
 		# Working hardcode fix
 		properties = {
-			'countdown': '153. -7. 5.'.split(),
-			'personal_best_and_rank': '157. -24. 5.'.split(),
-			'position': '150.5 -28. 5.'.split()
+			'countdown': [float(c) for c in '153. -7. 5.'.split()],
+			'personal_best_and_rank': [float(c) for c in '157. -24. 5.'.split()],
+			'position': [float(c) for c in '150.5 -28. 5.'.split()]
 		}
 
-		for k, v in properties:
+		for k, v in properties.items():
 			v[1] += offset
-			self.instance.ui_manager.properties.set_attribute(k, 'pos', v)
+			self.instance.ui_manager.properties.set_attribute(k, 'pos', ' '.join(str(c) for c in v))
 
 		# Update properties for every player
 		await self.instance.ui_manager.properties.send_properties()
