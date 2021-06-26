@@ -273,11 +273,17 @@ class NightCup(AppConfig):
 
 	async def whitelist(self, player, data, **kwargs):
 		for p in data.players:
+			if p in self.whitelisted:
+				await self.nc_chat(f'$i$f00Player is already whitelisted')
+				continue
 			self.whitelisted.append(p)
 			await self.nc_chat(f'Added login {p} to the whitelist', player)
 
 	async def unwhitelist(self, player, data, **kwargs):
 		for p in data.players:
+			if p not in self.whitelisted:
+				await self.nc_chat(f'$i$f00Player was not whitelisted')
+				continue
 			self.whitelisted.remove(p)
 			await self.nc_chat(f'Removed login {p} from the whitelist', player)
 
@@ -553,10 +559,12 @@ class NightCup(AppConfig):
 		if not self.nc_active:
 			await self.nc_chat('$i$f00No nightcup is currently active', player)
 			return
-		players_to_add = data.player
-		for player_to_add in players_to_add:
+		for player_to_add in data.player:
 			if not player_to_add in self.instance.player_manager.online_logins:
 				await self.nc_chat('$i$f00Player is currently not on the server', player)
+				continue
+			if player_to_add in self.ko_qualified:
+				await self.nc_chat(f'$i$f00Player is already in the qualified list')
 				continue
 			self.ko_qualified.append(player_to_add)
 			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_add)).nickname} {self.chat_reset} has been added to the '

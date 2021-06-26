@@ -170,7 +170,6 @@ class StandingsLogicManager:
 
 	# When a player enters spectator mode or disconnects
 	async def player_leave_play(self, player, *args, **kwargs):
-		print(player.login)
 		if player and self.app.ta_active:
 			await self.update_extended_widget(player, True)
 
@@ -188,10 +187,8 @@ class StandingsLogicManager:
 			virt_qualified = [player for player in self.current_cps if player in self.app.ko_qualified]
 			if player.login not in virt_qualified or virt_qualified.index(
 				player.login) >= await self.app.get_nr_qualified():
-				print(player.login)
 				self.current_cps.pop(player.login, None)
 				await self.update_standings_widget()
-		print()
 
 	# When the map ends
 	async def empty_data(self, *args, **kwargs):
