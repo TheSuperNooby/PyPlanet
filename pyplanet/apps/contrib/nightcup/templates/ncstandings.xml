@@ -7,6 +7,7 @@
         <quad pos="0 0" z-index="0" size="4 3" bgcolor=
           {% if score.virt_qualified %} "32CD3260"
           {% elif score.virt_eliminated %} "DC143C60"
+          {% elif score.whitelisted %} "00008860"
           {% else %} "00000070" {% endif %}/>
         <label pos="2 -1.5" z-index="1" size="4 3" text="{{ score.col0 }}" textsize="0.3" textfont="RajdhaniMono"
                textemboss="1" halign="center" valign="center2"/>
@@ -14,6 +15,7 @@
         <quad pos="4.25 0" z-index="0" size="20.5 3" bgcolor=
           {% if score.virt_qualified %} "32CD3260"
           {% elif score.virt_eliminated %} "DC143C60"
+          {% elif score.whitelisted %} "00008860"
           {% else %} "00000070" {% endif %}/>
         <label pos="4.5 -1.5" z-index="1" size="20 3" text="{{ score.nickname }}" textsize="0.2" textfont="RajdhaniMono"
                textemboss="1" halign="left" valign="center2" style="TextCardSmall"
@@ -22,6 +24,7 @@
         <quad pos="25 0" z-index="0" size="10 3" bgcolor=
           {% if score.virt_qualified %} "32CD3260"
           {% elif score.virt_eliminated %} "DC143C60"
+          {% elif score.whitelisted %} "00008860"
           {% else %} "00000070" {% endif %}/>
         <label pos="30 -1.5" z-index="1" size="10 3" text="{{ score.color }}{{ score.time }}" textsize="0.2"
                textfont="RajdhaniMono" textemboss="1" halign="center" valign="center2"/>

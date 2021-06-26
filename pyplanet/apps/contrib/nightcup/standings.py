@@ -128,7 +128,8 @@ class StandingsLogicManager:
 	async def player_finish(self, player, race_time, race_cps, is_end_race, raw, *args, **kwargs):
 		if self.app.ta_active:
 			current_ranking = next((x for x in self.current_rankings if x['login'] == player.login), None)
-			if not next((x for x in self.app.ta_finishers if x['login'] == player.login), None):
+			if not next((x for x in self.app.ta_finishers if x['login'] == player.login), None) \
+				and player.login not in self.app.whitelisted:
 				self.app.ta_finishers.append(current_ranking)
 			if current_ranking:
 				if self.last_qualified_cps:
@@ -144,7 +145,8 @@ class StandingsLogicManager:
 				new_ranking = dict(login=player.login, nickname=player.nickname, score=race_time, cp=-1,
 								   split=0, cps=race_cps)
 				self.current_rankings.append(new_ranking)
-				self.app.ta_finishers.append(new_ranking)
+				if player.login not in self.app.whitelisted:
+					self.app.ta_finishers.append(new_ranking)
 
 			self.current_rankings.sort(key=lambda x: (x['score'] == -1, x['score'], x['split']))
 			self.app.ta_finishers.sort(key=lambda x: x['score'])

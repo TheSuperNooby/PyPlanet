@@ -42,6 +42,7 @@ class NightCup(AppConfig):
 		super().__init__(*args, **kwargs)
 
 		self.ta_finishers = []
+		self.whitelisted = []
 		self.ko_qualified = []
 
 		self.settings_long = [
@@ -52,7 +53,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '60',
-				'value': 60,
+				'value': 0
 			},
 			{
 				'name': 'nc_ta_length',
@@ -60,7 +61,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '2700',
-				'value': 2700
+				'value': 90000
 			},
 			{
 				'name': 'nc_time_until_ko',
@@ -69,7 +70,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '600',
-				'value': 600
+				'value': 0
 			},
 			{
 				'name': 'nc_ta_wu_duration',
@@ -77,7 +78,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': 60
+				'value': 0
 			},
 			{
 				'name': 'nc_ko_wu_duration',
@@ -85,7 +86,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': 60
+				'value': 0
 			},
 			{
 				'name': 'nc_finish_timeout',
@@ -93,7 +94,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '90',
-				'value': 90
+				'value': 10
 			},
 			{
 				'name': 'nc_qualified_percentage',
@@ -196,6 +197,32 @@ class NightCup(AppConfig):
 				nargs='*',
 				type=str,
 				required=True
+			),
+			Command(
+				'whitelist',
+				namespace='nc',
+				aliases=['wl'],
+				target=self.whitelist,
+				perms='nightcup:nc_control',
+				admin=True
+			).add_param(
+				'players',
+				nargs='*',
+				type=str,
+				required=True
+			),
+			Command(
+				'unwhitelist',
+				namespace='nc',
+				aliases=['unwl'],
+				target=self.unwhitelist,
+				perms='nightcup:nc_control',
+				admin=True
+			).add_param(
+				'players',
+				nargs='*',
+				type=str,
+				required=True
 			)
 		)
 
@@ -207,6 +234,7 @@ class NightCup(AppConfig):
 			await self.nc_chat(f'A nightcup is currently in progress!', player)
 		else:
 			await self.nc_chat(f'Nightcup is starting now!')
+			await self.nc_chat(f'Set whitelisted players now using //nc wl player1 player2 player3', player)
 			self.admin = player
 			await self.set_ui_elements()
 
@@ -242,6 +270,16 @@ class NightCup(AppConfig):
 				f"Warmup of {await format_time(self.settings['nc_ta_wu_duration'])} for people to load the map.")
 			await self.nc_chat(f'Live with TA after WarmUp!')
 		await self.update_modesettings(settings)
+
+	async def whitelist(self, player, data, **kwargs):
+		for p in data.players:
+			self.whitelisted.append(p)
+			await self.nc_chat(f'Added login {p} to the whitelist', player)
+
+	async def unwhitelist(self, player, data, **kwargs):
+		for p in data.players:
+			self.whitelisted.remove(p)
+			await self.nc_chat(f'Removed login {p} from the whitelist', player)
 
 	async def wait_for_ta_start(self):
 		if not (self.settings['nc_time_until_ta'] == -1 or self.settings['nc_time_until_ta'] == 0):
@@ -353,6 +391,7 @@ class NightCup(AppConfig):
 		self.timer_view = None
 
 		self.ta_finishers.clear()
+		self.whitelisted.clear()
 		self.ko_qualified.clear()
 
 		await self.reset_backup()
@@ -409,12 +448,9 @@ class NightCup(AppConfig):
 			await self.nc_chat(f'Live with KO now!')
 
 	async def get_qualified(self, count, time):
-
-		# TODO add whitelist list to keep track of players qualified through finishing in pathfinding event.
-
 		await self.unregister_signals([self.get_qualified])
 
-		self.ko_qualified = [p['login'] for (i, p) in enumerate(self.ta_finishers)
+		self.ko_qualified = self.whitelisted + [p['login'] for (i, p) in enumerate(self.ta_finishers)
 							 if i * 100 < round(len(self.ta_finishers) * self.settings['nc_qualified_percentage'], 1)]
 		try:
 			for p in self.instance.player_manager.online_logins:

@@ -288,6 +288,7 @@ class NcStandingsWidget(TimesWidgetView):
 
 			list_records = list()
 			index = 1
+			nr_whitelisted = 0
 			for record in records:
 				list_record = dict()
 				if index == focused_index:
@@ -308,9 +309,19 @@ class NcStandingsWidget(TimesWidgetView):
 						list_record['split_color'] = '$f44'
 						list_record['split'] = '+' + times.format_time(abs(record['split']))
 
-					list_record['virt_qualified'] = index - 1 < await self.app.get_nr_qualified()
-					list_record['virt_eliminated'] = index - 1 < len(self.app.ta_finishers)
-					list_record['col0'] = index
+
+					if record['login'] in self.app.whitelisted:
+						list_record['virt_qualified'] = False
+						list_record['virt_eliminated'] = False
+						list_record['whitelisted'] = True
+						list_record['col0'] = '-'
+						nr_whitelisted += 1
+					else:
+						list_record['virt_qualified'] = index - nr_whitelisted - 1 < await self.app.get_nr_qualified()
+						list_record['virt_eliminated'] = index - nr_whitelisted - 1 < len(self.app.ta_finishers)
+						list_record['whitelisted'] = False
+						list_record['col0'] = index - nr_whitelisted
+
 					list_record['login'] = record['login']
 					list_record['nickname'] = record['nickname']
 					list_record['time'] = times.format_time(record['score']) if record['score'] > 0 else 'DNF'
