@@ -277,7 +277,7 @@ class NightCup(AppConfig):
 				await self.nc_chat(f'$i$f00Player is already whitelisted')
 				continue
 			self.whitelisted.append(p)
-			await self.nc_chat(f'Added login {p} to the whitelist', player)
+			await self.nc_chat(f'Added login {p} to the whitelist')
 
 	async def unwhitelist(self, player, data, **kwargs):
 		for p in data.players:
@@ -285,7 +285,7 @@ class NightCup(AppConfig):
 				await self.nc_chat(f'$i$f00Player was not whitelisted')
 				continue
 			self.whitelisted.remove(p)
-			await self.nc_chat(f'Removed login {p} from the whitelist', player)
+			await self.nc_chat(f'Removed login {p} from the whitelist')
 
 	async def wait_for_ta_start(self):
 		if not (self.settings['nc_time_until_ta'] == -1 or self.settings['nc_time_until_ta'] == 0):
