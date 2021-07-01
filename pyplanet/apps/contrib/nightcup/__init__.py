@@ -337,7 +337,10 @@ class NightCup(AppConfig):
 		if not self.nc_active:
 			return
 		self.ta_active = False
-		await self.standings_logic_manager.extended_view.hide()
+
+		await self.standings_logic_manager.extended_view.destroy()
+		self.standings_logic_manager.extended_view = None
+
 		await self.standings_logic_manager.set_standings_widget_title('Current CPs')
 		await self.standings_logic_manager.set_ko_listeners()
 		settings = await self.instance.mode_manager.get_settings()
