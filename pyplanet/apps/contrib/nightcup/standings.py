@@ -211,6 +211,15 @@ class StandingsLogicManager:
 		self.spec_targets[player] = target
 		await self.update_standings_widget()
 
+	async def remove_from_currentcps(self, player, data, **kwargs):
+		for p in data.players:
+			try:
+				self.current_cps.pop(p)
+				await self.app.nc_chat(f'Player with login {p} is removed from current_cps', player)
+				await self.update_standings_widget()
+			except KeyError as e:
+				await self.app.nc_chat(f'Player with login {p} is not in the current_cps', player)
+
 	# Update the view for all players
 	async def update_standings_widget(self, player=None):
 		if self.app.ko_active:

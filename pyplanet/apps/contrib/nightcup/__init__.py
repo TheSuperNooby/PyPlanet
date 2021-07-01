@@ -223,6 +223,18 @@ class NightCup(AppConfig):
 				nargs='*',
 				type=str,
 				required=True
+			),
+			Command(
+				'removestanding',
+				namespace='nc',
+				target=self.standings_logic_manager.remove_from_currentcps,
+				perms='nightcup:nc_control',
+				admin=True
+			).add_param(
+				'players',
+				nargs='*',
+				type=str,
+				required=True
 			)
 		)
 
@@ -320,7 +332,7 @@ class NightCup(AppConfig):
 		self.context.signals.listen(mp_signals.flow.round_end, self.get_qualified)
 		self.context.signals.listen(mp_signals.flow.round_end, self.wait_for_ko_start)
 
-	async def wait_for_ko_start(self, count, time):
+	async def wait_for_ko_start(self, count=0, time=0):
 		await asyncio.sleep(1)
 		if not self.nc_active:
 			return
