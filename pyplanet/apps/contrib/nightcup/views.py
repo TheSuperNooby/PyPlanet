@@ -240,7 +240,7 @@ class NcStandingsWidget(TimesWidgetView):
 					# Player is spectating someone
 					extended = player_extended['spec']
 					target = self.standings_manager.spec_targets[player]
-					focused = target or player
+					focused = target
 			if focused:
 				if self.app.ta_active:
 					player_record = [x for x in round_data if x['login'] == focused.login]
@@ -348,12 +348,16 @@ class NcStandingsWidget(TimesWidgetView):
 	async def handle_catch_all(self, player, action, values, **kwargs):
 		if str(action).startswith('spec_'):
 			target = action[5:]
-			await self.app.spec_player(player=player, target_login=target)
+			target_player = await self.app.instance.player_manager.get_player(target)
+			spec = bool((await self.app.instance.gbx('GetPlayerInfo', target))['SpectatorStatus'])
+			if target_player and target_player in self.app.instance.player_manager.online and not spec:
+				await self.app.spec_player(player=player, target_login=target)
+			self.standings_manager.spec_targets[player] = target_player
+			await self.standings_manager.update_standings_widget(player)
 
 
 class ExtendButtonView(WidgetView):
 
-	# TODO Possibly make this 2 separate widgets, one with extended and one without extended view.
 	# TODO Possibly extend this with a screen during break to show list of qualified players
 
 	widget_x = -124.5

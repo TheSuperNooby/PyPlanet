@@ -207,9 +207,8 @@ class StandingsLogicManager:
 				target = None
 		if not target or (player in self.spec_targets and self.spec_targets[player] == target):
 			return
-
 		self.spec_targets[player] = target
-		await self.update_standings_widget()
+		await self.update_standings_widget(player)
 
 	async def remove_from_currentcps(self, player, data, **kwargs):
 		for p in data.players:
