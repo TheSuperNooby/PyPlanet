@@ -66,11 +66,16 @@ class StandingsLogicManager:
 
 	async def stop(self):
 		await self.app.unregister_signals(list(self.listeners.values()) + list(self.ko_listeners.values()))
-		self.current_rankings.clear()
-		self.last_qualified_cps.clear()
-		self.current_cps.clear()
-		self.player_cps.clear()
-		self.spec_targets.clear()
+		if self.current_rankings:
+			self.current_rankings.clear()
+		if self.last_qualified_cps:
+			self.last_qualified_cps.clear()
+		if self.current_cps:
+			self.current_cps.clear()
+		if self.player_cps:
+			self.player_cps.clear()
+		if self.spec_targets:
+			self.spec_targets.clear()
 		if self.backup_ui_attributes:
 			for att, value in self.backup_ui_attributes.items():
 				self.app.instance.ui_manager.properties.set_attribute(att, 'pos', value)
