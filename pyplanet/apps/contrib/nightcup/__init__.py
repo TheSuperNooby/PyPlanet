@@ -5,7 +5,7 @@ from operator import itemgetter
 
 from xmlrpc.client import Fault
 from pyplanet.apps.config import AppConfig
-from pyplanet.apps.contrib.nightcup.views import TimerView, SettingsListView
+from pyplanet.apps.contrib.nightcup.views import TimerView, SettingsListView, WhitelistPlayerListView, QualifiedPlayerListView
 from pyplanet.apps.contrib.nightcup.standings import StandingsLogicManager
 from pyplanet.apps.core.maniaplanet import callbacks as mp_signals
 from pyplanet.apps.core.trackmania import callbacks as tm_signals
@@ -168,10 +168,10 @@ class NightCup(AppConfig):
 				perms='nightcup:nc_control',
 				admin=True
 			).add_param(
-				'player',
+				'players',
 				nargs='*',
 				type=str,
-				required=True
+				required=False
 			),
 			Command(
 				'removequalified',
@@ -181,7 +181,7 @@ class NightCup(AppConfig):
 				perms='nightcup:nc_control',
 				admin=True
 			).add_param(
-				'player',
+				'players',
 				nargs='*',
 				type=str,
 				required=True
@@ -209,7 +209,7 @@ class NightCup(AppConfig):
 				'players',
 				nargs='*',
 				type=str,
-				required=True
+				required=False
 			),
 			Command(
 				'unwhitelist',
@@ -284,19 +284,24 @@ class NightCup(AppConfig):
 		await self.update_modesettings(settings)
 
 	async def whitelist(self, player, data, **kwargs):
-		for p in data.players:
-			if p in self.whitelisted:
-				await self.nc_chat(f'$i$f00Player is already whitelisted')
-				continue
-			self.whitelisted.append(p)
-			await self.nc_chat(f'Added login {p} to the whitelist')
+		if data.players:
+			for p in data.players:
+				if p in self.whitelisted:
+					await self.nc_chat(f'$i$f00Player is already whitelisted', player)
+					continue
+				self.whitelisted.append(p)
+				await self.standings_logic_manager.update_standings_widget()
+				await self.nc_chat(f'Added login {p} to the whitelist')
+		else:
+			await display(WhitelistPlayerListView(self), player)
 
 	async def unwhitelist(self, player, data, **kwargs):
 		for p in data.players:
 			if p not in self.whitelisted:
-				await self.nc_chat(f'$i$f00Player was not whitelisted')
+				await self.nc_chat(f'$i$f00Player was not whitelisted', player)
 				continue
 			self.whitelisted.remove(p)
+			await self.standings_logic_manager.update_standings_widget()
 			await self.nc_chat(f'Removed login {p} from the whitelist')
 
 	async def wait_for_ta_start(self):
@@ -575,22 +580,25 @@ class NightCup(AppConfig):
 		if not self.nc_active:
 			await self.nc_chat('$i$f00No nightcup is currently active', player)
 			return
-		for player_to_add in data.player:
-			if not player_to_add in self.instance.player_manager.online_logins:
-				await self.nc_chat('$i$f00Player is currently not on the server', player)
-				continue
-			if player_to_add in self.ko_qualified:
-				await self.nc_chat(f'$i$f00Player is already in the qualified list')
-				continue
-			self.ko_qualified.append(player_to_add)
-			await self.nc_chat(f'Player {(await Player.get_by_login(player_to_add)).nickname} {self.chat_reset} has been added to the '
-							   f'qualified list')
+		if data.players:
+			for player_to_add in data.players:
+				if not player_to_add in self.instance.player_manager.online_logins:
+					await self.nc_chat('$i$f00Player is currently not on the server', player)
+					continue
+				if player_to_add in self.ko_qualified:
+					await self.nc_chat(f'$i$f00Player is already in the qualified list')
+					continue
+				self.ko_qualified.append(player_to_add)
+				await self.nc_chat(f'Player {(await Player.get_by_login(player_to_add)).nickname} {self.chat_reset} has been added to the '
+								   f'qualified list')
+		else:
+			await display(QualifiedPlayerListView(self), player)
 
 	async def remove_qualified(self, player, data, **kwargs):
 		if not self.nc_active:
 			await self.nc_chat('$i$f00No nightcup is currently active', player)
 			return
-		players_to_remove = data.player
+		players_to_remove = data.players
 		for player_to_remove in players_to_remove:
 			if not player_to_remove in self.ko_qualified:
 				await self.nc_chat('$i$f00Player is currently not in the qualified list', player)

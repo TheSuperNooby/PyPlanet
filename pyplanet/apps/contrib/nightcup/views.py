@@ -1,6 +1,8 @@
 import asyncio
 import math
+from collections import namedtuple
 
+from pyplanet.apps.core.maniaplanet.models import Player
 from pyplanet.utils import times
 from pyplanet.views.generics.widget import WidgetView, TimesWidgetView
 from pyplanet.views import TemplateView
@@ -309,7 +311,6 @@ class NcStandingsWidget(TimesWidgetView):
 						list_record['split_color'] = '$f44'
 						list_record['split'] = '+' + times.format_time(abs(record['split']))
 
-
 					if record['login'] in self.app.whitelisted:
 						list_record['virt_qualified'] = False
 						list_record['virt_eliminated'] = False
@@ -338,7 +339,6 @@ class NcStandingsWidget(TimesWidgetView):
 					list_record['nickname'] = record.player.nickname
 					list_record['time'] = times.format_time(record.time)
 
-
 				index = custom_start_index if index == self.top_entries else index + 1
 
 				list_records.append(list_record)
@@ -357,7 +357,6 @@ class NcStandingsWidget(TimesWidgetView):
 
 
 class ExtendButtonView(WidgetView):
-
 	# TODO Possibly extend this with a screen during break to show list of qualified players
 
 	widget_x = -124.5
@@ -385,3 +384,127 @@ class ExtendButtonView(WidgetView):
 
 	async def update_title(self, extended):
 		self.title = self.titles[extended]
+
+
+class WhitelistPlayerListView(ManualListView):
+	model = Player
+	title = 'Players in the match'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'Buddies'
+	# List of players available to add to whitelist
+	player_list = []
+
+	def __init__(self, app):
+		super().__init__(self)
+		self.app = app
+		self.manager = app.context.ui
+
+	async def get_fields(self):
+		return [
+			{
+				'name': '#',
+				'index': 'index',
+				'sorting': True,
+				'searching': False,
+				'width': 10,
+				'type': 'label'
+			},
+			{
+				'name': 'Nickname',
+				'index': 'nickname',
+				'sorting': True,
+				'searching': True,
+				'width': 100,
+				'type': 'label',
+				'action': self.action_add
+			},
+			{
+				'name': 'Login',
+				'index': 'login',
+				'sorting': True,
+				'searching': True,
+				'width': 50,
+				'type': 'label',
+				'action': self.action_add
+			}
+		]
+
+	async def get_data(self):
+		return [
+			{
+				'index': index,
+				'nickname': player.nickname,
+				'login': player.login
+			} for index, player in enumerate(
+				self.app.instance.player_manager.online, start=1
+			)
+		]
+
+	def __del__(self):
+		self.app.views_open.remove(self)
+		super().__del__()
+
+	async def action_add(self, player, values, player_info, **kwargs):
+		await self.app.whitelist(player, namedtuple('data', ['players'])([player_info['login']]))
+
+
+class QualifiedPlayerListView(ManualListView):
+	model = Player
+	title = 'Players in the match'
+	icon_style = 'Icons128x128_1'
+	icon_substyle = 'Buddies'
+	# List of players available to add to whitelist
+	player_list = []
+
+	def __init__(self, app):
+		super().__init__(self)
+		self.app = app
+		self.manager = app.context.ui
+
+	async def get_fields(self):
+		return [
+			{
+				'name': '#',
+				'index': 'index',
+				'sorting': True,
+				'searching': False,
+				'width': 10,
+				'type': 'label'
+			},
+			{
+				'name': 'Nickname',
+				'index': 'nickname',
+				'sorting': True,
+				'searching': True,
+				'width': 100,
+				'type': 'label',
+				'action': self.action_add
+			},
+			{
+				'name': 'Login',
+				'index': 'login',
+				'sorting': True,
+				'searching': True,
+				'width': 50,
+				'type': 'label',
+				'action': self.action_add
+			}
+		]
+
+	async def get_data(self):
+		return [
+			{
+				'index': index,
+				'nickname': player.nickname,
+				'login': player.login
+			} for index, player in enumerate(
+				self.app.instance.player_manager.online, start=1
+			)
+		]
+
+	def __del__(self):
+		self.app.views_open.remove(self)
+		super().__del__()
+
+	async def action_add(self, player, values, player_info, **kwargs):
+		await self.app.add_qualified(player, namedtuple('data', ['players'])([player_info['login']]))
