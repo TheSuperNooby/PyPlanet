@@ -26,7 +26,6 @@ class StandingsLogicManager:
 		self.extended_view = None
 
 		self.listeners = {
-			mp_signals.map.map_start: self.empty_data,
 			tm_signals.finish: self.player_finish,
 			mp_signals.player.player_connect: self.player_connect,
 			tm_signals.start_line: self.player_start,
@@ -189,12 +188,6 @@ class StandingsLogicManager:
 				player.login) >= await self.app.get_nr_qualified():
 				self.current_cps.pop(player.login, None)
 				await self.update_standings_widget()
-
-	# When the map ends
-	async def empty_data(self, *args, **kwargs):
-		self.current_rankings.clear()
-		self.current_cps.clear()
-		await self.update_standings_widget()
 
 	async def player_info_changed(self, player, is_spectator, target_id, spectator_status, target, *args, **kwargs):
 		if not is_spectator:

@@ -53,7 +53,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '60',
-				'value': 0
+				'value': 60
 			},
 			{
 				'name': 'nc_ta_length',
@@ -61,7 +61,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '2700',
-				'value': 90000
+				'value': 2700
 			},
 			{
 				'name': 'nc_time_until_ko',
@@ -70,7 +70,7 @@ class NightCup(AppConfig):
 				'constraints': [(lambda x: x > 5 or x == 0 or x == -1,
 								 'Time can not be shorter than 5 seconds.')],
 				'default': '600',
-				'value': 0
+				'value': 600
 			},
 			{
 				'name': 'nc_ta_wu_duration',
@@ -78,7 +78,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': 0
+				'value': 60
 			},
 			{
 				'name': 'nc_ko_wu_duration',
@@ -86,7 +86,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '60',
-				'value': 0
+				'value': 60
 			},
 			{
 				'name': 'nc_finish_timeout',
@@ -94,7 +94,7 @@ class NightCup(AppConfig):
 				'type': int,
 				'constraints': [],
 				'default': '90',
-				'value': 10
+				'value': 90
 			},
 			{
 				'name': 'nc_qualified_percentage',
@@ -338,9 +338,6 @@ class NightCup(AppConfig):
 			return
 		self.ta_active = False
 
-		await self.standings_logic_manager.extended_view.destroy()
-		self.standings_logic_manager.extended_view = None
-
 		await self.standings_logic_manager.set_standings_widget_title('Current CPs')
 		await self.standings_logic_manager.set_ko_listeners()
 		settings = await self.instance.mode_manager.get_settings()
@@ -380,7 +377,11 @@ class NightCup(AppConfig):
 
 		await self.instance.map_manager.set_next_map(self.instance.map_manager.current_map)
 		self.ko_active = True
+
+		await self.standings_logic_manager.extended_view.destroy()
+		self.standings_logic_manager.extended_view = None
 		await self.standings_logic_manager.set_standings_widget_title('KO phase')
+
 		try:
 			await self.instance.gbx('NextMap')
 		except Fault as e:
